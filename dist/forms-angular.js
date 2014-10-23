@@ -1,4 +1,4 @@
-/*! forms-angular 2014-10-22 */
+/*! forms-angular 2014-10-23 */
 'use strict';
 
 var formsAngular = angular.module('formsAngular', [
@@ -361,6 +361,7 @@ formsAngular
           common += addAll('Field', null, options);
           switch (fieldInfo.type) {
             case 'select' :
+              common += fieldInfo.add ? (' ' + fieldInfo.add + ' ') : '';
               common += (fieldInfo.readonly ? 'disabled ' : '');
               if (fieldInfo.select2) {
                 common += 'class="fng-select2' + formControl + compactClass + sizeClassBS2 + '"';

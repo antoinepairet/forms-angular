@@ -149,6 +149,7 @@ formsAngular
           common += addAll('Field', null, options);
           switch (fieldInfo.type) {
             case 'select' :
+              common += fieldInfo.add ? (' ' + fieldInfo.add + ' ') : '';
               common += (fieldInfo.readonly ? 'disabled ' : '');
               if (fieldInfo.select2) {
                 common += 'class="fng-select2' + formControl + compactClass + sizeClassBS2 + '"';
