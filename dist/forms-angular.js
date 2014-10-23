@@ -2227,7 +2227,6 @@ formsAngular.factory('recordHandler', function (
 
                 var dataRequest;
                 if (typeof schemaElement.filter !== 'undefined' && schemaElement.filter) {
-                    console.log('filtering');
                     dataRequest = SubmissionsService.getPagedAndFilteredList(lookupCollection, schemaElement.filter);
                 } else {
                     dataRequest = SubmissionsService.getAll(lookupCollection);
