@@ -17,7 +17,8 @@
     "async": "~0.9",
     "body-parser": ">=0.0.1",
     "method-override": ">=0.0.1",
-    "errorhandler": ">=0.0.1"
+    "errorhandler": ">=0.0.1",
+    "normalize-for-search": "https://github.com/DerekDomino/normalize-for-search#master"
   },
   "scripts": {
     "test": "scripts/testrun.sh"

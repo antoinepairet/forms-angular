@@ -8,6 +8,7 @@ var _ = require('underscore'),
   async = require('async'),
   url = require('url'),
   mongoose = require('mongoose'),
+  normalizeForSearch = require('normalize-for-search'),
   debug = false;
 
 mongoose.set('debug', debug);
@@ -230,13 +231,10 @@ DataForm.prototype.internalSearch = function (req, resourcesToSearch, includeRes
     moreCount = 0,
     searchCriteria;
 
-  if (req.route && req.route.path === '/api/search') {
-          // Called from search box - treat words as separate strings
-    searchCriteria = {$regex: '^(' + searchFor.split(' ').join('|') + ')', $options: 'i'};
-      } else {
-          // called from somewhere else (probably select2 ajax) preserve spaces
-    searchCriteria = {$regex: '^' + searchFor, $options: 'i'};
-      }
+    var searchParts = searchFor.split(/[\s,\_\/\'\\\(\)'\-]+/);
+    searchParts = searchParts.map(function(s) { return normalizeForSearch(s); });
+
+    searchCriteria = {$regex: '(' + searchParts.join('|') + ')', $options: 'i'};
 
   this.searchFunc(
     searches,
