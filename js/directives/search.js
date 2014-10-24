@@ -60,7 +60,20 @@ formsAngular.controller('SearchCtrl', ['$scope', '$http', '$location', 'routingS
   $scope.$watch('searchTarget', function (newValue) {
     if (newValue && newValue.length > 0) {
       currentRequest = newValue;
-      $http.get('/api/search?q=' + newValue).success(function (data) {
+
+        // TODO: should use same method addParams as in select ui-select2 searchs
+        var modelStr = '';
+        var filterStr = '';
+        if (typeof $scope.fngModel !== 'undefined' && $scope.fngModel !== '') {
+            modelStr = '/' + $scope.fngModel;
+        }
+        if (typeof $scope.fngFilter !== 'undefined' && $scope.fngFilter !== '') {
+            filterStr = '&f=' + JSON.stringify($scope.fngFilter);
+        }
+        var queryStr = '?q=' + newValue;
+        var searchUrl = '/api/search' + modelStr + queryStr + filterStr;
+
+      $http.get(searchUrl).success(function (data) {
         // Check that we haven't fired off a subsequent request, in which
         // case we are no longer interested in these results
         if (currentRequest === newValue) {
@@ -92,6 +105,10 @@ formsAngular.controller('SearchCtrl', ['$scope', '$http', '$location', 'routingS
   .directive('globalSearch', ['cssFrameworkService', function (cssFrameworkService) {
     return {
       restrict: 'AE',
+        scope: {
+            fngModel: '=',
+            fngFilter: '='
+        },
       templateUrl: 'template/search-' + cssFrameworkService.framework() + '.html',
       controller: 'SearchCtrl'
     };
