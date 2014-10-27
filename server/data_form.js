@@ -336,7 +336,14 @@ DataForm.prototype.search = function () {
       return next();
     }
 
-    this.internalSearch(req, [req.resource], false, 10, function (resultsObject) {
+    var limit;
+    if (typeof req.query.l && !isNaN(Number(req.query.l))) {
+      limit = req.query.l;
+    } else {
+      limit = 50;
+    }
+
+    this.internalSearch(req, [req.resource], false, limit, function (resultsObject) {
       res.send(resultsObject);
     });
   }, this);
@@ -344,7 +351,15 @@ DataForm.prototype.search = function () {
 
 DataForm.prototype.searchAll = function () {
   return _.bind(function (req, res) {
-    this.internalSearch(req, this.resources, true, 10, function (resultsObject) {
+
+    var limit;
+    if (typeof req.query.l && !isNaN(Number(req.query.l))) {
+      limit = req.query.l;
+    } else {
+      limit = 50;
+    }
+
+    this.internalSearch(req, this.resources, true, limit, function (resultsObject) {
       res.send(resultsObject);
     });
   }, this);
