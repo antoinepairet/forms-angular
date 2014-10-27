@@ -18,7 +18,7 @@
     "body-parser": ">=0.0.1",
     "method-override": ">=0.0.1",
     "errorhandler": ">=0.0.1",
-    "normalize-for-search": "git+https://github.com/DerekDomino/normalize-for-search#master"
+    "normalize-for-search": "^1.1.0
   },
   "scripts": {
     "test": "scripts/testrun.sh"
