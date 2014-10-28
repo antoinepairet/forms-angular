@@ -51,6 +51,9 @@ formsAngular.factory('SubmissionsService', ['$http', function ($http) {
     getPagedAndFilteredList: function (modelName, options) {
       return $http.get('/api/' + modelName + generateListQuery(options));
     },
+    searchPagedAndFilteredList: function (options) {
+      return $http.get('/api/search' + generateListQuery(options));
+    },
     deleteRecord: function (model, id) {
       return $http.delete('/api/' + model + '/' + id);
     },

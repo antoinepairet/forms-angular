@@ -1,4 +1,4 @@
-/*! forms-angular 2014-10-24 */
+/*! forms-angular 2014-10-28 */
 'use strict';
 
 var formsAngular = angular.module('formsAngular', [
@@ -924,8 +924,8 @@ formsAngular
 
 'use strict';
 
-formsAngular.controller('SearchCtrl', ['$scope', '$http', '$location', 'routingService',
-    function ($scope, $http, $location, routingService) {
+formsAngular.controller('SearchCtrl', ['$scope', '$location', 'routingService', 'SubmissionsService',
+    function ($scope, $location, routingService, SubmissionsService) {
 
   var currentRequest = '';
 
@@ -965,7 +965,8 @@ formsAngular.controller('SearchCtrl', ['$scope', '$http', '$location', 'routingS
 
   $scope.selectResult = function (resultNo) {
     var result = $scope.results[resultNo];
-    $location.path(routingService.prefix() + '/' + result.resource + '/' + result.id + '/edit');
+    
+    routingService.redirectTo('edit', result.resource, undefined, result.id);
   };
 
   $scope.resultClass = function (index) {
@@ -985,19 +986,28 @@ formsAngular.controller('SearchCtrl', ['$scope', '$http', '$location', 'routingS
     if (newValue && newValue.length > 0) {
       currentRequest = newValue;
 
-        // TODO: should use same method addParams as in select ui-select2 searchs
-        var modelStr = '';
-        var filterStr = '';
-        if (typeof $scope.fngModel !== 'undefined' && $scope.fngModel !== '') {
-            modelStr = '/' + $scope.fngModel;
-        }
-        if (typeof $scope.fngFilter !== 'undefined' && $scope.fngFilter !== '') {
-            filterStr = '&f=' + JSON.stringify($scope.fngFilter);
-        }
-        var queryStr = '?q=' + newValue;
-        var searchUrl = '/api/search' + modelStr + queryStr + filterStr;
+      var modelStr = '';
+      var options = {};
+      if (typeof $scope.fngModel !== 'undefined' && $scope.fngModel !== '') {
+        modelStr = '/' + $scope.fngModel;
+      }
+      if (typeof $scope.fngLimit !== 'undefined' && $scope.fngLimit !== '') {
+        options.limit = $scope.fngLimit;
+      }
+      if (typeof $scope.fngFilter !== 'undefined' && $scope.fngFilter !== '') {
+        options.find = $scope.fngFilter;
+      }
+      //if (typeof $scope.fngAggregate !== 'undefined' && $scope.fngAggregate !== '') {
+      //  options.aggregate = $scope.fngAggregate;
+      //}
+      if (typeof $scope.fngOrder !== 'undefined' && $scope.fngOrder !== '') {
+        options.order = $scope.fngOrder;
+      }
+      if (typeof $scope.fngSkip !== 'undefined' && $scope.fngSkip !== '') {
+        options.skip = $scope.fngSkip;
+      }
 
-      $http.get(searchUrl).success(function (data) {
+      SubmissionsService.searchPagedAndFilteredList(options).success(function (data) {
         // Check that we haven't fired off a subsequent request, in which
         // case we are no longer interested in these results
         if (currentRequest === newValue) {
@@ -1031,7 +1041,10 @@ formsAngular.controller('SearchCtrl', ['$scope', '$http', '$location', 'routingS
       restrict: 'AE',
         scope: {
             fngModel: '=',
-            fngFilter: '='
+            fngFilter: '=',
+            fngLimit: '=',
+            fngOrder: '=',
+            fngSkip: '='
         },
       templateUrl: 'template/search-' + cssFrameworkService.framework() + '.html',
       controller: 'SearchCtrl'
@@ -2822,6 +2835,9 @@ formsAngular.factory('SubmissionsService', ['$http', function ($http) {
     },
     getPagedAndFilteredList: function (modelName, options) {
       return $http.get('/api/' + modelName + generateListQuery(options));
+    },
+    searchPagedAndFilteredList: function (options) {
+      return $http.get('/api/search' + generateListQuery(options));
     },
     deleteRecord: function (model, id) {
       return $http.delete('/api/' + model + '/' + id);
