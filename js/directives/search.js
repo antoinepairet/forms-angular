@@ -46,7 +46,15 @@ formsAngular.controller('SearchCtrl', ['$scope', '$location', 'routingService', 
     if (typeof $scope.fngViewName !== 'undefined') {
       part1Url = $scope.fngViewName;
     } else {
-      part1Url = result.resource;
+      if (typeof result.resource !== 'undefined') {
+        part1Url = result.resource;
+      } else {
+        if (typeof $scope.fngModel !== 'undefined') {
+          part1Url = $scope.fngModel;
+        } else {
+          console.error('Missing resource/model name for building url');
+        }
+      }
     }
 
 
@@ -71,11 +79,8 @@ formsAngular.controller('SearchCtrl', ['$scope', '$location', 'routingService', 
     if (newValue && newValue.length > 0) {
       currentRequest = newValue;
 
-      var modelStr = '';
       var options = {};
-      if (typeof $scope.fngModel !== 'undefined' && $scope.fngModel !== '') {
-        modelStr = '/' + $scope.fngModel;
-      }
+
       if (typeof $scope.fngLimit !== 'undefined' && $scope.fngLimit !== '') {
         options.limit = $scope.fngLimit;
       }
@@ -92,10 +97,14 @@ formsAngular.controller('SearchCtrl', ['$scope', '$location', 'routingService', 
         options.skip = $scope.fngSkip;
       }
 
+      var searchPromise;
+      if (typeof $scope.fngModel !== 'undefined' && $scope.fngModel !== '') {
+        searchPromise = SubmissionsService.searchModelPagedAndFilteredList($scope.fngModel, currentRequest, options);
+      } else {
+        searchPromise = SubmissionsService.searchPagedAndFilteredList(currentRequest, options);
+      }
 
-
-      SubmissionsService.searchPagedAndFilteredList(currentRequest, options).success(function (data) {
-        // Check that we haven't fired off a subsequent request, in which
+      searchPromise.success(function (data) {        // Check that we haven't fired off a subsequent request, in which
         // case we are no longer interested in these results
         if (currentRequest === newValue) {
           if ($scope.searchTarget.length > 0) {
