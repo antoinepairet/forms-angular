@@ -43,13 +43,15 @@ formsAngular.controller('SearchCtrl', ['$scope', '$location', 'routingService', 
     var result = $scope.results[resultNo];
 
     var part1Url;
-    if (typeof $scope.editViewName !== 'undefined') {
-      part1Url = $scope.editViewName
+    if (typeof $scope.fngViewName !== 'undefined') {
+      part1Url = $scope.fngViewName;
     } else {
       part1Url = result.resource;
     }
 
-    routingService.redirectTo('edit', result.resource, $scope.fngFormName, result.id);
+
+    var url = routingService.buildOperationUrl('edit', part1Url, $scope.fngFormName, result.id);
+    $location.path(url);
   };
 
   $scope.resultClass = function (index) {
