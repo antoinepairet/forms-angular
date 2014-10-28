@@ -965,8 +965,15 @@ formsAngular.controller('SearchCtrl', ['$scope', '$location', 'routingService', 
 
   $scope.selectResult = function (resultNo) {
     var result = $scope.results[resultNo];
-    
-    routingService.redirectTo('edit', result.resource, undefined, result.id);
+
+    var part1Url;
+    if (typeof $scope.editViewName !== 'undefined') {
+      part1Url = $scope.editViewName
+    } else {
+      part1Url = result.resource;
+    }
+
+    routingService.redirectTo('edit', result.resource, $scope.fngFormName, result.id);
   };
 
   $scope.resultClass = function (index) {
@@ -1039,13 +1046,15 @@ formsAngular.controller('SearchCtrl', ['$scope', '$location', 'routingService', 
   .directive('globalSearch', ['cssFrameworkService', function (cssFrameworkService) {
     return {
       restrict: 'AE',
-        scope: {
-            fngModel: '=',
-            fngFilter: '=',
-            fngLimit: '=',
-            fngOrder: '=',
-            fngSkip: '='
-        },
+      scope: {
+        fngModel: '=',
+        fngFilter: '=',
+        fngLimit: '=',
+        fngOrder: '=',
+        fngSkip: '=',
+        fngViewName: '=',
+        fngFormName: '='
+      },
       templateUrl: 'template/search-' + cssFrameworkService.framework() + '.html',
       controller: 'SearchCtrl'
     };
