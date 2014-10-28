@@ -29,6 +29,7 @@ formsAngular.factory('SubmissionsService', ['$http', function ($http) {
       }
     };
 
+    addParameter('q', options.query);
     addParameter('l', options.limit);
     addParameter('f', options.find);
     addParameter('a', options.aggregate);
@@ -51,7 +52,8 @@ formsAngular.factory('SubmissionsService', ['$http', function ($http) {
     getPagedAndFilteredList: function (modelName, options) {
       return $http.get('/api/' + modelName + generateListQuery(options));
     },
-    searchPagedAndFilteredList: function (options) {
+    searchPagedAndFilteredList: function (needle, options) {
+      options = _.extend(options, {query: needle});
       return $http.get('/api/search' + generateListQuery(options));
     },
     deleteRecord: function (model, id) {

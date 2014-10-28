@@ -1014,7 +1014,9 @@ formsAngular.controller('SearchCtrl', ['$scope', '$location', 'routingService', 
         options.skip = $scope.fngSkip;
       }
 
-      SubmissionsService.searchPagedAndFilteredList(options).success(function (data) {
+
+
+      SubmissionsService.searchPagedAndFilteredList(currentRequest, options).success(function (data) {
         // Check that we haven't fired off a subsequent request, in which
         // case we are no longer interested in these results
         if (currentRequest === newValue) {
@@ -2823,6 +2825,7 @@ formsAngular.factory('SubmissionsService', ['$http', function ($http) {
       }
     };
 
+    addParameter('q', options.query);
     addParameter('l', options.limit);
     addParameter('f', options.find);
     addParameter('a', options.aggregate);
@@ -2845,7 +2848,8 @@ formsAngular.factory('SubmissionsService', ['$http', function ($http) {
     getPagedAndFilteredList: function (modelName, options) {
       return $http.get('/api/' + modelName + generateListQuery(options));
     },
-    searchPagedAndFilteredList: function (options) {
+    searchPagedAndFilteredList: function (needle, options) {
+      options = _.extend(options, {query: needle});
       return $http.get('/api/search' + generateListQuery(options));
     },
     deleteRecord: function (model, id) {

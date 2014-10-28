@@ -90,7 +90,9 @@ formsAngular.controller('SearchCtrl', ['$scope', '$location', 'routingService', 
         options.skip = $scope.fngSkip;
       }
 
-      SubmissionsService.searchPagedAndFilteredList(options).success(function (data) {
+
+
+      SubmissionsService.searchPagedAndFilteredList(currentRequest, options).success(function (data) {
         // Check that we haven't fired off a subsequent request, in which
         // case we are no longer interested in these results
         if (currentRequest === newValue) {
