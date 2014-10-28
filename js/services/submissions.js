@@ -54,7 +54,7 @@ formsAngular.factory('SubmissionsService', ['$http', function ($http) {
     },
     searchModelPagedAndFilteredList: function (modelName, needle, options) {
       options = _.extend(options, {query: needle});
-      return $http.get('/api/' + modelName + '/' + generateListQuery(options));
+      return $http.get('/api/search/' + modelName + generateListQuery(options));
     },
     searchPagedAndFilteredList: function (needle, options) {
       options = _.extend(options, {query: needle});

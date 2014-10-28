@@ -120,7 +120,7 @@ formsAngular.controller('SearchCtrl', ['$scope', '$location', 'routingService', 
           }
         }
       }).error(function (data, status) {
-        console.log('Error in searchbox.js : ' + data + ' (status=' + status + ')');
+        console.log('Error in search.js : ' + data + ' (status=' + status + ')');
       });
     } else {
       clearSearchResults();
