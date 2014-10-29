@@ -67,15 +67,14 @@ formsAngular.provider('routingService', [ '$injector', '$locationProvider', func
       return urlStr;
   }
 
-  function _redirectToView(operation, scope, id) {
-    var location = $injector.get('$location');
+  function _pathView(operation, scope, id) {
     var part1Url;
     if (typeof scope.viewName !== 'undefined') {
       part1Url = scope.viewName;
     } else {
       part1Url = scope.modelName;
     }
-    location.path(exports._buildOperationUrl(config.prefix, operation, part1Url, scope.formName, id));
+    return exports._buildOperationUrl(config.prefix, operation, part1Url, scope.formName, id);
   }
 
   return {
@@ -173,15 +172,14 @@ formsAngular.provider('routingService', [ '$injector', '$locationProvider', func
         buildOperationUrl: function(operation, modelName, formName, id) {
             return _buildOperationUrl(config.prefix, operation, modelName, formName, id);
         },
-        redirectToList: function(scope) {
+        pathList: function(scope) {
           if (typeof scope.listPath === 'undefined') {
-            _redirectToView('list', scope);
+            return _pathView('list', scope);
           } else {
-            $injector.get('$location')
-              .path(_buildUrl(scope.listPath));
+            return _buildUrl(scope.listPath);
           }
         },
-        redirectToView: _redirectToView,
+        pathView: _pathView,
         redirectTo: function () {
           return function (operation, scope, location, id) {
 //            switch (config.routing) {

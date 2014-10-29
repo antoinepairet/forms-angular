@@ -62,7 +62,7 @@ formsAngular.factory('recordHandler', function (
                 if (typeof $scope.dataEventFunctions.onAfterDelete === 'function') {
                     $scope.dataEventFunctions.onAfterDelete(ctrlState.master);
                 }
-                routingService.redirectToList($scope);
+                $location.path(routingService.pathList($scope));
             });
     };
 
@@ -101,7 +101,7 @@ formsAngular.factory('recordHandler', function (
                     if (options.redirect) {
                         $window.location = options.redirect;
                     } else {
-                        routingService.redirectToView('edit', $scope, data._id);
+                        $location.path(routingService.pathView('edit', $scope, data._id));
                     }
                 } else {
                     $scope.showError(data);
@@ -571,10 +571,7 @@ formsAngular.factory('recordHandler', function (
         };
 
         $scope.newClick = function () {
-          console.log('bef');
-          $injector.get('$location');
-          console.log('after');
-            routingService.redirectToView('new', $scope);
+            $location.path(routingService.pathView('new', $scope));
         };
 
         $scope.$on('$locationChangeStart', function (event, next) {
