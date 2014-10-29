@@ -2654,6 +2654,9 @@ formsAngular.factory('recordHandler', function (
         };
 
         $scope.newClick = function () {
+          console.log('bef');
+          $injector.get('$location');
+          console.log('after');
             routingService.redirectToView('new', $scope);
         };
 
