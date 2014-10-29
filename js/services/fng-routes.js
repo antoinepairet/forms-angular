@@ -1,6 +1,7 @@
 'use strict';
 
-formsAngular.provider('routingService', [ '$injector', '$locationProvider', function ($injector, $locationProvider) {
+formsAngular.provider('routingService', ['$injector', '$locationProvider', '$location',
+  function ($injector, $locationProvider, $location) {
 
   var config = {
 //  fixedRoutes: [] an array in the same format as builtInRoutes that is matched before the generic routes.  Can be omitted
