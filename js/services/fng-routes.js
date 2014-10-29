@@ -1,7 +1,6 @@
 'use strict';
 
-formsAngular.provider('routingService', ['$injector', '$locationProvider', '$location',
-  function ($injector, $locationProvider, $location) {
+formsAngular.provider('routingService', [ '$injector', '$locationProvider', function ($injector, $locationProvider) {
 
   var config = {
 //  fixedRoutes: [] an array in the same format as builtInRoutes that is matched before the generic routes.  Can be omitted
@@ -69,13 +68,14 @@ formsAngular.provider('routingService', ['$injector', '$locationProvider', '$loc
   }
 
   function _redirectToView(operation, scope, id) {
+    var location = $injector.get('$location');
     var part1Url;
     if (typeof scope.viewName !== 'undefined') {
       part1Url = scope.viewName;
     } else {
       part1Url = scope.modelName;
     }
-    $location.path(exports._buildOperationUrl(config.prefix, operation, part1Url, scope.formName, id));
+    location.path(exports._buildOperationUrl(config.prefix, operation, part1Url, scope.formName, id));
   }
 
   return {
@@ -177,7 +177,8 @@ formsAngular.provider('routingService', ['$injector', '$locationProvider', '$loc
           if (typeof scope.listPath === 'undefined') {
             _redirectToView('list', scope);
           } else {
-            $location.path(_buildUrl(scope.listPath));
+            $injector.get('$location')
+              .path(_buildUrl(scope.listPath));
           }
         },
         redirectToView: _redirectToView,
