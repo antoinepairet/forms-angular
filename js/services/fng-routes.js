@@ -40,6 +40,15 @@ formsAngular.provider('routingService', [ '$injector', '$locationProvider', func
     });
   }
 
+  function _buildUrl(path) {
+    var url = config.html5Mode ? '' : '#';
+    url += config.hashPrefix;
+    url += config.prefix;
+    if (url[0]) { url += '/'; }
+    url += (path[0] === '/' ? path.slice(1) : path);
+    return url;
+  }
+
   function _buildOperationUrl(prefix, operation, modelName, formName, id) {
       var formString = formName ? ('/' + formName) : '';
       var modelString = prefix + '/' + modelName;
@@ -56,6 +65,16 @@ formsAngular.provider('routingService', [ '$injector', '$locationProvider', func
               break;
       }
       return urlStr;
+  }
+
+  function _redirectToView(operation, scope, id) {
+    var part1Url;
+    if (typeof scope.viewName !== 'undefined') {
+      part1Url = scope.viewName;
+    } else {
+      part1Url = scope.modelName;
+    }
+    $location.path(exports._buildOperationUrl(config.prefix, operation, part1Url, scope.formName, id));
   }
 
   return {
@@ -149,17 +168,18 @@ formsAngular.provider('routingService', [ '$injector', '$locationProvider', func
 //  };
 //}]);
         },
-        buildUrl: function (path) {
-          var url = config.html5Mode ? '' : '#';
-          url += config.hashPrefix;
-          url += config.prefix;
-          if (url[0]) { url += '/'; }
-          url += (path[0] === '/' ? path.slice(1) : path);
-          return url;
-        },
+        buildUrl: _buildUrl,
         buildOperationUrl: function(operation, modelName, formName, id) {
             return _buildOperationUrl(config.prefix, operation, modelName, formName, id);
         },
+        redirectToList: function(scope) {
+          if (typeof scope.listPath === 'undefined') {
+            _redirectToView('list', scope);
+          } else {
+            $location.path(_buildUrl(scope.listPath));
+          }
+        },
+        redirectToView: _redirectToView,
         redirectTo: function () {
           return function (operation, scope, location, id) {
 //            switch (config.routing) {
