@@ -1242,7 +1242,7 @@ formsAngular.provider('routingService', [ '$injector', '$locationProvider', func
     } else {
       part1Url = scope.modelName;
     }
-    return exports._buildOperationUrl(config.prefix, operation, part1Url, scope.formName, id);
+    return _buildOperationUrl(config.prefix, operation, part1Url, scope.formName, id);
   }
 
   return {
