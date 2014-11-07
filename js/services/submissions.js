@@ -35,6 +35,7 @@ formsAngular.factory('SubmissionsService', ['$http', function ($http) {
     addParameter('a', options.aggregate);
     addParameter('o', options.order);
     addParameter('s', options.skip);
+    addParameter('format', options.format);
 
     return queryString;
   };

@@ -166,7 +166,8 @@ DataForm.prototype.internalSearch = function (req, resourcesToSearch, includeRes
     resourceCount = resourcesToSearch.length,
     urlParts = url.parse(req.url, true),
     searchFor = urlParts.query.q,
-    filter = urlParts.query.f;
+    filter = urlParts.query.f,
+    formatResult = urlParts.query.format;
 
   function translate(string, array, context) {
     if (array) {
@@ -291,7 +292,9 @@ DataForm.prototype.internalSearch = function (req, resourcesToSearch, includeRes
               // Otherwise add them new...
               // Use special listings format if defined
               var specialListingFormat = item.resource.options.searchResultFormat;
-              if (specialListingFormat) {
+              if (formatResult === 'full') {
+                resultObject = docs[k];
+              } else if (specialListingFormat) {
                 resultObject = specialListingFormat.apply(docs[k]);
               } else {
                 resultObject = {

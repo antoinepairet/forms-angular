@@ -1,4 +1,4 @@
-/*! forms-angular 2014-10-29 */
+/*! forms-angular 2014-11-07 */
 'use strict';
 
 var formsAngular = angular.module('formsAngular', [
@@ -2863,6 +2863,7 @@ formsAngular.factory('SubmissionsService', ['$http', function ($http) {
     addParameter('a', options.aggregate);
     addParameter('o', options.order);
     addParameter('s', options.skip);
+    addParameter('format', options.format);
 
     return queryString;
   };
