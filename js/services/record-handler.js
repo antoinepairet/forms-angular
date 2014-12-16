@@ -1,5 +1,3 @@
-
-
 'use strict';
 
 /**
@@ -10,7 +8,7 @@
  */
 
 formsAngular.factory('recordHandler', function (
-    $location, $window, $filter,
+    $location, $window, $filter, $timeout,
     routingService, SubmissionsService, SchemasService) {
     var exports = {};
 
@@ -297,7 +295,7 @@ formsAngular.factory('recordHandler', function (
         var result = false;
         if (aSchema.type === 'text') {
             result = true;
-        } else if ((aSchema.type === 'select') && !aSchema.ids) {
+        } else if (aSchema.needsX || ((aSchema.type === 'select') && !aSchema.ids && !aSchema.directive)) {
             result = true;
         }
         return result;
@@ -305,35 +303,37 @@ formsAngular.factory('recordHandler', function (
 
     // Convert {_id:'xxx', array:['item 1'], lookup:'012abcde'} to {_id:'xxx', array:[{x:'item 1'}], lookup:'List description for 012abcde'}
     // Which is what we need for use in the browser
-    var convertToAngularModel = function (schema, anObject, prefixLength, $scope) {
+    var convertToAngularModel = function (schema, anObject, prefixLength, $scope, master) {
+        master = master || anObject;
         for (var i = 0; i < schema.length; i++) {
-            var fieldname = schema[i].name.slice(prefixLength);
-            if (schema[i].schema) {
+          var schemaEntry = schema[i];
+          var fieldname = schemaEntry.name.slice(prefixLength);
+            if (schemaEntry.schema) {
                 var extractField = getData(anObject, fieldname);
                 if (extractField) {
                     for (var j = 0; j < extractField.length; j++) {
-                        extractField[j] = convertToAngularModel(schema[i].schema, extractField[j], prefixLength + 1 + fieldname.length, $scope);
+                        extractField[j] = convertToAngularModel(schemaEntry.schema, extractField[j], prefixLength + 1 + fieldname.length, $scope, master);
                     }
                 }
             } else {
 
                 // Convert {array:['item 1']} to {array:[{x:'item 1'}]}
                 var thisField = exports.getListData(anObject, fieldname, $scope.select2List);
-                if (schema[i].array && simpleArrayNeedsX(schema[i]) && thisField) {
+                if (schemaEntry.array && simpleArrayNeedsX(schemaEntry) && thisField) {
                     for (var k = 0; k < thisField.length; k++) {
                         thisField[k] = {x: thisField[k] };
                     }
                 }
 
                 // Convert {lookup:'012abcde'} to {lookup:'List description for 012abcde'}
-                var idList = $scope[exports.suffixCleanId(schema[i], '_ids')];
+                var idList = $scope[exports.suffixCleanId(schemaEntry, '_ids')];
                 if (idList && idList.length > 0 && anObject[fieldname]) {
-                    anObject[fieldname] = convertForeignKeys(schema[i], anObject[fieldname], $scope[exports.suffixCleanId(schema[i], 'Options')], idList);
-                } else if (schema[i].select2 && !schema[i].select2.fngAjax) {
+                    anObject[fieldname] = convertForeignKeys(schemaEntry, anObject[fieldname], $scope[exports.suffixCleanId(schemaEntry, 'Options')], idList);
+                } else if (schemaEntry.select2 && !schemaEntry.select2.fngAjax) {
                     if (anObject[fieldname]) {
-                        if (schema[i].array) {
+                        if (schemaEntry.array) {
                             for (var n = 0; n < anObject[fieldname].length; n++) {
-                                $scope[schema[i].select2.s2query].query({
+                                $scope[schemaEntry.select2.s2query].query({
                                     term: anObject[fieldname][n].x.text || anObject[fieldname][n].text || anObject[fieldname][n].x || anObject[fieldname][n],
                                     callback: function (array) {
                                         if (array.results.length > 0) {
@@ -347,7 +347,7 @@ formsAngular.factory('recordHandler', function (
                                 });
                             }
                         } else {
-                            $scope[schema[i].select2.s2query].query({
+                            $scope[schemaEntry.select2.s2query].query({
                                 term: anObject[fieldname],
                                 callback: function (array) {
                                     if (array.results.length > 0) {
@@ -357,23 +357,51 @@ formsAngular.factory('recordHandler', function (
                             });
                         }
                     }
+                } else if (schemaEntry.select2) {
+                  // Do nothing with these - handled elsewhere (and deprecated)
+                  void(schemaEntry.select2);
+                } else if (anObject[fieldname] && $scope.conversions[schemaEntry.name] && $scope.conversions[schemaEntry.name].fngajax) {
+                  var conversionEntry = schemaEntry;
+                  $scope.conversions[conversionEntry.name].fngajax(anObject[fieldname], conversionEntry, function(updateEntry, value) {
+                    // Update the master and (preserving pristine if appropriate) the record
+                    exports.setData(master, updateEntry.name, undefined, value);
+                    exports.preservePristine(angular.element('#'+updateEntry.id), function() {
+                      exports.setData($scope.record, updateEntry.name, undefined, value);
+                    });
+                  });
                 }
             }
         }
         return anObject;
     };
 
+    exports.preservePristine = function(element, fn) {
+      // stop the form being set to dirty when a fn is called
+      // Use when the record (and master) need to be updated by lookup values displayed asynchronously
+      var modelController = element.inheritedData('$ngModelController');
+      var isClean = (modelController && modelController.$pristine);
+      if (isClean) {
+        // fake it to dirty here and reset after call to fn
+        modelController.$pristine = false;
+      }
+      fn();
+      if (isClean) {
+        modelController.$pristine = true;
+      }
+    };
+
+
     // Reverse the process of convertToAngularModel
     exports.convertToMongoModel = function (schema, anObject, prefixLength, $scope) {
 
         function convertLookup(lookup, schemaElement) {
             var retVal;
-            if (schemaElement.select2.fngAjax) {
+            if ((schemaElement.select2 && schemaElement.select2.fngAjax) || ($scope.conversions[schemaElement.name] && $scope.conversions[schemaElement.name].fngajax)) {
                 if (lookup && lookup.id) {
                     retVal = lookup.id;
                 }
             } else if (lookup) {
-                retVal = lookup.text || lookup.x.text;
+                retVal = lookup.text || (lookup.x ? lookup.x.text : lookup);
             }
             return retVal;
         }
@@ -403,7 +431,7 @@ formsAngular.factory('recordHandler', function (
                     updateObject(fieldname, anObject, function (value) {
                         return convertToForeignKeys(schema[i], value, $scope[exports.suffixCleanId(schema[i], 'Options')], idList);
                     });
-                } else if (schema[i].select2) {
+                } else if ($scope.conversions[schema[i].name]) {
                     var lookup = getData(anObject, fieldname, null);
                     var newVal;
                     if (schema[i].array) {
@@ -432,8 +460,17 @@ formsAngular.factory('recordHandler', function (
     function convertForeignKeys(schemaElement, input, values, ids) {
         if (schemaElement.array) {
             var returnArray = [];
+            var needsX = !schemaElement.directive || simpleArrayNeedsX(schemaElement);
             for (var j = 0; j < input.length; j++) {
-                returnArray.push({x: exports.convertIdToListValue(input[j], ids, values, schemaElement.name)});
+              var val = input[j];
+              if (val && val.x) {
+                val = val.x;
+              }
+              var lookup = exports.convertIdToListValue(val, ids, values, schemaElement.name);
+              if (needsX) {
+                lookup = {x: lookup};
+              }
+              returnArray.push(lookup);
             }
             return returnArray;
         } else if (schemaElement.select2) {
@@ -514,7 +551,8 @@ formsAngular.factory('recordHandler', function (
 
         $scope.cancel = function () {
             angular.copy(ctrlState.master, $scope.record);
-            $scope.setPristine();
+          // Let call backs etc resolve in case they dirty form, then clean it
+            $timeout($scope.setPristine);
         };
 
         var handleError = exports.handleError($scope);

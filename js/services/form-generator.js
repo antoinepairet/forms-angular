@@ -1,4 +1,3 @@
-
 'use strict';
 
 /**
@@ -14,8 +13,8 @@ formsAngular.factory('formGenerator', function (
     SubmissionsService, routingService, recordHandler) {
     var exports = {};
 
+    // utility for apps that use forms-angular
     exports.generateEditUrl = function (obj, $scope) {
-        // FIXME: this method seems to be not used anymore
         return routingService.buildUrl($scope.modelName + '/' + ($scope.formName ? $scope.formName + '/' : '') + obj._id + '/edit');
     };
 
@@ -45,14 +44,14 @@ formsAngular.factory('formGenerator', function (
             if (!tab) {
                 if ($scope.tabs.length === 0) {
                     if ($scope.formSchema.length > 0) {
-                        $scope.tabs.push({title: 'Main', content: []});
+                        $scope.tabs.push({title: 'Main', content: [], active: ($scope.tab==='Main' || !$scope.tab)});
                         tab = $scope.tabs[0];
                         for (var i = 0; i < $scope.formSchema.length; i++) {
                             tab.content.push($scope.formSchema[i]);
                         }
                     }
                 }
-                tab = $scope.tabs[$scope.tabs.push({title: tabTitle, containerType: 'tab', content: []}) - 1];
+              tab = $scope.tabs[$scope.tabs.push({title: tabTitle, containerType: 'tab', content: [], active: (tabTitle===$scope.tab)}) - 1];
             }
             tab.content.push(thisInst);
         }
@@ -125,7 +124,6 @@ formsAngular.factory('formGenerator', function (
         }
     };
 
-
     exports.handleFieldType = function (formInstructions, mongooseType, mongooseOptions, $scope, ctrlState, handleError) {
 
         var select2ajaxName;
@@ -133,11 +131,17 @@ formsAngular.factory('formGenerator', function (
             formInstructions.array = true;
             mongooseType = mongooseType.caster;
             angular.extend(mongooseOptions, mongooseType.options);
+            if (mongooseType.options && mongooseType.options.form) {
+              angular.extend(formInstructions, mongooseType.options.form);
+            }
         }
         if (mongooseType.instance === 'String') {
             if (mongooseOptions.enum) {
                 formInstructions.type = formInstructions.type || 'select';
-                // Hacky way to get required styling working on select controls
+                if (formInstructions.select2) {
+                    $scope.conversions[formInstructions.name] = formInstructions.select2;
+
+                    // Hacky way to get required styling working on select2 controls
                 if (mongooseOptions.required) {
 
                     $scope.$watch('record.' + formInstructions.name, function (newValue) {
@@ -148,7 +152,6 @@ formsAngular.factory('formGenerator', function (
                         updateInvalidClasses($scope.record[formInstructions.name], formInstructions.id, formInstructions.select2, ctrlState);
                     }, 0);
                 }
-                if (formInstructions.select2) {
                     if (formInstructions.select2 === true) {formInstructions.select2 = {}; }
                     formInstructions.select2.s2query = 'select2' + formInstructions.name.replace(/\./g, '_');
                     $scope[formInstructions.select2.s2query] = {
@@ -164,7 +167,7 @@ formsAngular.factory('formGenerator', function (
                                         } else {
                                             if (angular.isArray(dataVal)) {
                                                 // extract the array offset of the subkey from the element id
-                                                var workString = element.context.id;
+                                                var workString = element.context.getAttribute('ng-model');
                                                 var pos = workString.indexOf('.'+parts[0]);
                                                 workString = workString.slice(0,pos);
                                                 pos = workString.lastIndexOf('.');
@@ -187,10 +190,10 @@ formsAngular.factory('formGenerator', function (
                                             if (formInstructions.array) {
                                                 var offset = parseInt(element.context.id.match('_[0-9].*$')[0].slice(1));
                                                 if (leafVal[offset].x) {
-                                                    callback(leafVal[offset].x);
+                                                    recordHandler.preservePristine(element, function() { callback(leafVal[offset].x);});
                                                 }
                                             } else {
-                                                callback(leafVal);
+                                              recordHandler.preservePristine(element, function() { callback(leafVal);});
                                             }
                                         }
                                     });
@@ -243,6 +246,7 @@ formsAngular.factory('formGenerator', function (
                     if (!formInstructions.select2) {formInstructions.select2 = mongooseOptions.form.select2;}
                     if (formInstructions.select2 === true) {formInstructions.select2 = {}; }
                     $scope.select2List.push(formInstructions.name);
+                    $scope.conversions[formInstructions.name] = formInstructions.select2;
                     if (formInstructions.select2.fngAjax) {
                         // create the instructions for select2
                         select2ajaxName = 'ajax' + formInstructions.name.replace(/\./g, '');
@@ -254,29 +258,24 @@ formsAngular.factory('formGenerator', function (
                             allowClear: !mongooseOptions.required,
                             minimumInputLength: 2,
                             initSelection: function (element, callback) {
-                                var theId = element.val();
-                                if (theId && theId !== '') {
+                                if (!angular.element(element).attr('sel2init')) {
+                                  var theId = element.val();
+                                  if (theId && theId !== '') {
                                     SubmissionsService.getListAttributes(mongooseOptions.ref, theId)
-                                        .success(function (data) {
-                                            if (data.success === false) {
-                                                $location.path('/404');
-                                            }
-                                            var display = {id: theId, text: data.list};
-                                            recordHandler.setData(ctrlState.master, formInstructions.name, element, display);
-                                            // stop the form being set to dirty
-                                            var modelController = element.inheritedData('$ngModelController'),
-                                                isClean = modelController.$pristine;
-                                            if (isClean) {
-                                                // fake it to dirty here and reset after callback()
-                                                modelController.$pristine = false;
-                                            }
-                                            callback(display);
-                                            if (isClean) {
-                                                modelController.$pristine = true;
-                                            }
-                                        }).error(handleError);
-//                                } else {
-//                                    throw new Error('select2 initSelection called without a value');
+                                      .success(function (data) {
+                                        if (data.success === false) {
+                                          $location.path('/404');
+                                        }
+                                        var display = {id: theId, text: data.list};
+                                        recordHandler.setData(ctrlState.master, formInstructions.name, element, display);
+                                        recordHandler.preservePristine(element, function () {
+                                          callback(display);
+                                        });
+                                      }).error(handleError);
+                                    //                                } else {
+                                    //                                    throw new Error('select2 initSelection called without a value');
+                                    angular.element(element).attr('sel2init', 'true');
+                                  }
                                 }
                             },
                             ajax: {
@@ -332,12 +331,14 @@ formsAngular.factory('formGenerator', function (
                             }
                         };
                         _.extend($scope[formInstructions.select2.s2query], formInstructions.select2);
-                        $scope.select2List.push(formInstructions.name);
                         formInstructions.options = recordHandler.suffixCleanId(formInstructions, 'Options');
                         formInstructions.ids = recordHandler.suffixCleanId(formInstructions, '_ids');
                         recordHandler.setUpSelectOptions(mongooseOptions.ref, formInstructions, $scope, ctrlState, exports.handleSchema, handleError);
                     }
-                } else {
+                } else if (!formInstructions.directive ||
+                  !formInstructions[$.camelCase(formInstructions.directive)] ||
+                  !formInstructions[$.camelCase(formInstructions.directive)].fngAjax
+                ) {
                     formInstructions.options = recordHandler.suffixCleanId(formInstructions, 'Options');
                     formInstructions.ids = recordHandler.suffixCleanId(formInstructions, '_ids');
                     recordHandler.setUpSelectOptions(mongooseOptions.ref, formInstructions, $scope, ctrlState, exports.handleSchema, handleError);
@@ -366,7 +367,7 @@ formsAngular.factory('formGenerator', function (
                 formInstructions.add = 'step="' + formInstructions.step + '" ' + (formInstructions.add || '');
             }
         } else {
-            throw new Error('Field ' + formInstructions.name + ' is of unsupported type ' + mongooseType.instance);
+            throw new Error('Field ' + formInstructions.name + ' is of unsupported type ' + mongooseType.instance, formInstructions, mongooseType);
         }
         if (mongooseOptions.required) {
             formInstructions.required = true;
@@ -492,7 +493,6 @@ formsAngular.factory('formGenerator', function (
         return display;
     };
 
-
     // Conventional view is that this should go in a directive.  I reckon it is quicker here.
     exports.updateDataDependentDisplay = function (curValue, oldValue, force, $scope) {
         var depends, i, j, k, element;
@@ -569,22 +569,32 @@ formsAngular.factory('formGenerator', function (
         return forceNextTime;
     };
 
-    exports.add = function (fieldName, $event, $scope) {
-        var arrayField;
-        var fieldParts = fieldName.split('.');
-        arrayField = $scope.record;
-        for (var i = 0, l = fieldParts.length; i < l; i++) {
-            if (!arrayField[fieldParts[i]]) {
-                if (i === l - 1) {
-                    arrayField[fieldParts[i]] = [];
-                } else {
-                    arrayField[fieldParts[i]] = {};
-                }
-            }
-            arrayField = arrayField[fieldParts[i]];
+    function getArrayFieldToExtend(fieldName, $scope) {
+      var fieldParts = fieldName.split('.');
+      var arrayField = $scope.record;
+      for (var i = 0, l = fieldParts.length; i < l; i++) {
+        if (!arrayField[fieldParts[i]]) {
+          if (i === l - 1) {
+            arrayField[fieldParts[i]] = [];
+          } else {
+            arrayField[fieldParts[i]] = {};
+          }
         }
+        arrayField = arrayField[fieldParts[i]];
+      }
+      return arrayField;
+    }
+
+    exports.add = function (fieldName, $event, $scope) {
+        var arrayField = getArrayFieldToExtend(fieldName, $scope);
         arrayField.push({});
         $scope.setFormDirty($event);
+    };
+
+    exports.unshift = function (fieldName, $event, $scope) {
+      var arrayField = getArrayFieldToExtend(fieldName, $scope);
+      arrayField.unshift({});
+      $scope.setFormDirty($event);
     };
 
     exports.remove = function (fieldName, value, $event, $scope) {
@@ -599,7 +609,6 @@ formsAngular.factory('formGenerator', function (
     };
 
     exports.decorateScope = function($scope, formGeneratorInstance, recordHandlerInstance, sharedStuff) {
-        sharedStuff.baseScope = $scope;
         $scope.record = sharedStuff.record;
         $scope.phase = 'init';
         $scope.disableFunctions = sharedStuff.disableFunctions;
@@ -611,8 +620,11 @@ formsAngular.factory('formGenerator', function (
         $scope.recordList = [];
         $scope.dataDependencies = {};
         $scope.select2List = [];
+        $scope.conversions = {};
         $scope.pageSize = 60;
         $scope.pagesLoaded = 0;
+
+      sharedStuff.baseScope = $scope;
 
         $scope.generateEditUrl = function (obj) {
             return formGeneratorInstance.generateEditUrl(obj, $scope);
@@ -654,6 +666,10 @@ formsAngular.factory('formGenerator', function (
             return formGeneratorInstance.add(fieldName, $event, $scope);
         };
 
+        $scope.unshift = function (fieldName, $event) {
+          return formGeneratorInstance.unshift(fieldName, $event, $scope);
+        };
+
         $scope.remove = function (fieldName, value, $event) {
             return formGeneratorInstance.remove(fieldName, value, $event, $scope);
         };
@@ -663,7 +679,7 @@ formsAngular.factory('formGenerator', function (
             $('#' + $(ev.currentTarget).data('select2-open')).select2('open');
         };
 
-        // FIXME: still used?
+        // Useful utility when debugging
         $scope.toJSON = function (obj) {
             return JSON.stringify(obj, null, 2);
         };
@@ -672,9 +688,7 @@ formsAngular.factory('formGenerator', function (
             return ($scope.tabs.length ? $scope.tabs : $scope.formSchema);
         };
 
-
     };
-
 
     return exports;
 });
