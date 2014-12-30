@@ -258,24 +258,21 @@ formsAngular.factory('formGenerator', function (
                             allowClear: !mongooseOptions.required,
                             minimumInputLength: 2,
                             initSelection: function (element, callback) {
-                                if (!angular.element(element).attr('sel2init')) {
-                                  var theId = element.val();
-                                  if (theId && theId !== '') {
-                                    SubmissionsService.getListAttributes(mongooseOptions.ref, theId)
-                                      .success(function (data) {
-                                        if (data.success === false) {
-                                          $location.path('/404');
-                                        }
-                                        var display = {id: theId, text: data.list};
-                                        recordHandler.setData(ctrlState.master, formInstructions.name, element, display);
-                                        recordHandler.preservePristine(element, function () {
-                                          callback(display);
-                                        });
-                                      }).error(handleError);
-                                    //                                } else {
-                                    //                                    throw new Error('select2 initSelection called without a value');
-                                    angular.element(element).attr('sel2init', 'true');
-                                  }
+                                var theId = element.val();
+                                if (theId && theId !== '') {
+                                  SubmissionsService.getListAttributes(mongooseOptions.ref, theId)
+                                    .success(function (data) {
+                                      if (data.success === false) {
+                                        $location.path('/404');
+                                      }
+                                      var display = {id: theId, text: data.list};
+                                      recordHandler.setData(ctrlState.master, formInstructions.name, element, display);
+                                      recordHandler.preservePristine(element, function () {
+                                        callback(display);
+                                      });
+                                    }).error(handleError);
+                                  //                                } else {
+                                  //                                    throw new Error('select2 initSelection called without a value');
                                 }
                             },
                             ajax: {
@@ -350,7 +347,7 @@ formsAngular.factory('formGenerator', function (
                     formInstructions.type = 'text';
                 } else {
                     formInstructions.type = 'text';
-                    formInstructions.add = 'ui-date ui-date-format ';
+                    formInstructions.add = 'ui-date ui-date-format datepicker-popup ';
                 }
             }
         } else if (mongooseType.instance === 'boolean') {
