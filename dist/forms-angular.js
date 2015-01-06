@@ -1,4 +1,4 @@
-/*! forms-angular 2014-12-23 */
+/*! forms-angular 2015-01-06 */
 'use strict';
 
 var formsAngular = angular.module('formsAngular', [
@@ -1175,7 +1175,8 @@ formsAngular.provider('routingService', [ '$injector', '$locationProvider', func
     hashPrefix: '',
     html5Mode: false,
     routing: 'ngroute',    // What sort of routing do we want?  ngroute or uirouter
-    prefix: ''        // How do we want to prefix out routes?  If not empty string then first character must be slash (which is added if not)
+    prefix: '',        // How do we want to prefix out routes?  If not empty string then first character must be slash (which is added if not)
+    parentState: null
   };
 
   var builtInRoutes = [
@@ -1198,15 +1199,20 @@ formsAngular.provider('routingService', [ '$injector', '$locationProvider', func
       _routeProvider.when(config.prefix + routeSpec.route, routeSpec.options || {templateUrl: routeSpec.templateUrl});
     });
   }
+    function _setUpUIRoutes(routes) {
+        angular.forEach(routes, function (routeSpec) {
+            var options = routeSpec.options || {
+                url: config.prefix + routeSpec.route,
+                templateUrl: routeSpec.templateUrl
+            };
 
-  function _setUpUIRoutes(routes) {
-    angular.forEach(routes, function (routeSpec) {
-      _stateProvider.state(routeSpec.state, routeSpec.options || {
-        url: routeSpec.route,
-        templateUrl: routeSpec.templateUrl
-      });
-    });
-  }
+            if (config.parentState) {
+                options.parent = config.parentState;
+            }
+
+            _stateProvider.state(routeSpec.state, options);
+        });
+    }
 
   function _buildUrl(path) {
     var url = config.html5Mode ? '' : '#';
