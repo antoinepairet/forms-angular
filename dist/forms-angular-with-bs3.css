@@ -5782,10 +5782,6 @@ button.close {
     display: none !important;
   }
 }
-body {
-  position: relative;
-  padding-top: 40px;
-}
 .list-item {
   min-height: 20px;
   padding: 19px;
@@ -5979,6 +5975,39 @@ form .form-inline > .sub-doc {
   padding: 9px;
   border-radius: 3px;
   min-height: 40px;
+}
+button.form-btn {
+  font-size: 60%;
+  padding-top: 0.25em;
+}
+.form-horizontal input.input-sm,
+.form-horizontal textarea.input-sm {
+  font-size: 14px;
+  padding: 2px 6px;
+}
+.form-horizontal select.input-sm {
+  font-size: 14px;
+  padding-left: 5px;
+}
+.form-horizontal .checkbox {
+  float: left;
+  padding: 5px 10px 0 6px;
+}
+.form-horizontal .control-label {
+  padding-top: 6px;
+}
+.form-horizontal .bs3-input {
+  padding-left: 0;
+}
+.form-horizontal .help-block {
+  clear: left;
+  bottom-margin: 4px;
+}
+textarea[msd-elastic] {
+  min-height: 25px;
+}
+.fileupload-buttonbar .btn {
+  padding: 5px 8px;
 }
 .page-header {
   font-family: inherit;

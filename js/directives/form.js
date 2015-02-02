@@ -379,7 +379,7 @@ formsAngular
 
                     } else {
                       template += '      <button name="remove_' + info.id + '_btn" class="remove-btn btn btn-default btn-xs form-btn" ng-click="remove(\'' + info.name + '\',$index,$event)">' +
-                        '          <i class="glyphicon glyphicon-minus">';
+                      '          <i class="glyphicon glyphicon-minus">';
                     }
                     template += '          </i> Remove' +
                       '      </button>';

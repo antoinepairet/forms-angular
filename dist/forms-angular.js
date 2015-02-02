@@ -1,4 +1,4 @@
-/*! forms-angular 2014-12-16 */
+/*! forms-angular 2015-02-02 */
 'use strict';
 
 var formsAngular = angular.module('formsAngular', [
@@ -12,9 +12,9 @@ void(formsAngular);  // Make jshint happy
 'use strict';
 
 formsAngular.controller('BaseCtrl', [
-    '$scope', '$location', '$filter', '$modal', '$window',
+    '$scope', '$rootScope', '$location', '$filter', '$modal', '$window',
     '$data', 'SchemasService', 'routingService', 'formGenerator', 'recordHandler',
-    function ($scope, $location, $filter, $modal, $window,
+    function ($scope, $rootScope, $location, $filter, $modal, $window,
               $data, SchemasService, routingService, formGenerator, recordHandler) {
 
         var sharedStuff = $data;
@@ -27,6 +27,8 @@ formsAngular.controller('BaseCtrl', [
         angular.extend($scope, routingService.parsePathFunc()($location.$$path));
 
         $scope.modelNameDisplay = sharedStuff.modelNameDisplay || $filter('titleCase')($scope.modelName);
+
+        $rootScope.$broadcast('fngFormLoadStart', $scope);
 
         formGenerator.decorateScope($scope, formGenerator, recordHandler, sharedStuff);
         recordHandler.decorateScope($scope, $modal, recordHandler, ctrlState);
@@ -606,7 +608,7 @@ formsAngular
 
                     } else {
                       template += '      <button name="remove_' + info.id + '_btn" class="remove-btn btn btn-default btn-xs form-btn" ng-click="remove(\'' + info.name + '\',$index,$event)">' +
-                        '          <i class="glyphicon glyphicon-minus">';
+                      '          <i class="glyphicon glyphicon-minus">';
                     }
                     template += '          </i> Remove' +
                       '      </button>';
@@ -1177,6 +1179,10 @@ formsAngular.provider('cssFrameworkService', [function () {
         framework: function () {
           return config.framework;
         },
+        // This next function is just for the demo website - don't use it
+        setFrameworkForDemoWebsite: function (framework) {
+          config.framework = framework;
+        },
         span: function (cols) {
           var result;
           switch (config.framework) {
@@ -1268,6 +1274,14 @@ formsAngular.provider('routingService', [ '$injector', '$locationProvider', func
     angular.forEach(routes, function (routeSpec) {
       _routeProvider.when(config.prefix + routeSpec.route, routeSpec.options || {templateUrl: routeSpec.templateUrl});
     });
+    // This next bit is just for the demo website to allow demonstrating multiple frameworks - not available with other routers
+    if (config.variantsForDemoWebsite) {
+      angular.forEach(config.variantsForDemoWebsite, function(variant) {
+        angular.forEach(routes, function (routeSpec) {
+          _routeProvider.when(config.prefix + variant + routeSpec.route, routeSpec.options || {templateUrl: routeSpec.templateUrl});
+        });
+      });
+    }
   }
 
   function _setUpUIRoutes(routes) {
@@ -1357,6 +1371,15 @@ formsAngular.provider('routingService', [ '$injector', '$locationProvider', func
               }
 
               var locationSplit = location.split('/');
+
+              // get rid of variant if present - just used for demo website
+              if (config.variants) {
+                if (config.variants.indexOf(locationSplit[1]) !== -1) {
+                  lastObject.variant = locationSplit[1];
+                  locationSplit.shift();
+                }
+              }
+
               var locationParts = locationSplit.length;
               if (locationSplit[1] === 'analyse') {
                 lastObject.analyse = true;
@@ -1739,24 +1762,20 @@ formsAngular.factory('formGenerator', function (
                             allowClear: !mongooseOptions.required,
                             minimumInputLength: 2,
                             initSelection: function (element, callback) {
-                                if (!angular.element(element).attr('sel2init')) {
-                                  var theId = element.val();
-                                  if (theId && theId !== '') {
-                                    SubmissionsService.getListAttributes(mongooseOptions.ref, theId)
-                                      .success(function (data) {
-                                        if (data.success === false) {
-                                          $location.path('/404');
-                                        }
-                                        var display = {id: theId, text: data.list};
-                                        recordHandler.setData(ctrlState.master, formInstructions.name, element, display);
-                                        recordHandler.preservePristine(element, function () {
-                                          callback(display);
-                                        });
-                                      }).error(handleError);
-                                    //                                } else {
-                                    //                                    throw new Error('select2 initSelection called without a value');
-                                    angular.element(element).attr('sel2init', 'true');
-                                  }
+                                var theId = element.val();
+                                if (theId && theId !== '') {
+                                  SubmissionsService.getListAttributes(mongooseOptions.ref, theId)
+                                    .success(function (data) {
+                                      if (data.success === false) {
+                                        $location.path('/404');
+                                      }
+                                      var display = {id: theId, text: data.list};
+                                      recordHandler.preservePristine(element, function () {
+                                        callback(display);
+                                      });
+                                    }).error(handleError);
+                                  //                                } else {
+                                  //                                    throw new Error('select2 initSelection called without a value');
                                 }
                             },
                             ajax: {
@@ -1831,7 +1850,7 @@ formsAngular.factory('formGenerator', function (
                     formInstructions.type = 'text';
                 } else {
                     formInstructions.type = 'text';
-                    formInstructions.add = 'ui-date ui-date-format ';
+                    formInstructions.add = 'ui-date ui-date-format datepicker-popup-fix ';
                 }
             }
         } else if (mongooseType.instance === 'boolean') {
@@ -2162,7 +2181,7 @@ formsAngular.factory('formGenerator', function (
 
         // Useful utility when debugging
         $scope.toJSON = function (obj) {
-            return JSON.stringify(obj, null, 2);
+            return 'The toJSON function is deprecated - use the json filter instead\n\n' + JSON.stringify(obj, null, 2);
         };
 
         $scope.baseSchema = function () {
@@ -2280,13 +2299,13 @@ formsAngular.factory('formMarkupHelper', [
 
     exports.inputChrome = function (value, fieldInfo, options, markupVars) {
       if (cssFrameworkService.framework() === 'bs3' && exports.isHorizontalStyle(options.formstyle) && fieldInfo.type !== 'checkbox') {
-        value = '<div class="' + markupVars.sizeClassBS3 + '">' + value + '</div>';
+        value = '<div class="bs3-input ' + markupVars.sizeClassBS3 + '">' + value + '</div>';
       }
-      if (fieldInfo.helpInline && fieldInfo.type !== 'checkbox') {
-        value += '<span class="help-inline">' + fieldInfo.helpInline + '</span>';
+      if (fieldInfo.helpInline) {
+        value += '<span class="' + (cssFrameworkService.framework() === 'bs2' ? 'help-inline' : 'help-block') + '">' + fieldInfo.helpInline + '</span>';
       }
       if (fieldInfo.help) {
-        value += '<span class="help-block ' + markupVars.sizeClassBS3 + '">' + fieldInfo.help + '</span>';
+        value += '<span class="help-block">' + fieldInfo.help + '</span>';
       }
       return value;
     };
@@ -2740,18 +2759,17 @@ formsAngular.factory('recordHandler', function (
         master = master || anObject;
         for (var i = 0; i < schema.length; i++) {
           var schemaEntry = schema[i];
-          var fieldname = schemaEntry.name.slice(prefixLength);
+          var fieldName = schemaEntry.name.slice(prefixLength);
+            var fieldValue = getData(anObject, fieldName);
             if (schemaEntry.schema) {
-                var extractField = getData(anObject, fieldname);
-                if (extractField) {
-                    for (var j = 0; j < extractField.length; j++) {
-                        extractField[j] = convertToAngularModel(schemaEntry.schema, extractField[j], prefixLength + 1 + fieldname.length, $scope, master);
+                if (fieldValue) {
+                    for (var j = 0; j < fieldValue.length; j++) {
+                        fieldValue[j] = convertToAngularModel(schemaEntry.schema, fieldValue[j], prefixLength + 1 + fieldName.length, $scope, master);
                     }
                 }
             } else {
-
                 // Convert {array:['item 1']} to {array:[{x:'item 1'}]}
-                var thisField = exports.getListData(anObject, fieldname, $scope.select2List);
+                var thisField = exports.getListData(anObject, fieldName, $scope.select2List);
                 if (schemaEntry.array && simpleArrayNeedsX(schemaEntry) && thisField) {
                     for (var k = 0; k < thisField.length; k++) {
                         thisField[k] = {x: thisField[k] };
@@ -2760,20 +2778,23 @@ formsAngular.factory('recordHandler', function (
 
                 // Convert {lookup:'012abcde'} to {lookup:'List description for 012abcde'}
                 var idList = $scope[exports.suffixCleanId(schemaEntry, '_ids')];
-                if (idList && idList.length > 0 && anObject[fieldname]) {
-                    anObject[fieldname] = convertForeignKeys(schemaEntry, anObject[fieldname], $scope[exports.suffixCleanId(schemaEntry, 'Options')], idList);
+                if (fieldValue && idList && idList.length > 0) {
+                    if (fieldName.indexOf('.') !== -1) {throw new Error('Trying to directly assign to a nested field 332');}  // Not sure that this can happen, but put in a runtime test
+                    anObject[fieldName] = convertForeignKeys(schemaEntry, fieldValue, $scope[exports.suffixCleanId(schemaEntry, 'Options')], idList);
                 } else if (schemaEntry.select2 && !schemaEntry.select2.fngAjax) {
-                    if (anObject[fieldname]) {
+                    if (fieldValue) {
                         if (schemaEntry.array) {
-                            for (var n = 0; n < anObject[fieldname].length; n++) {
+                            for (var n = 0; n < fieldValue.length; n++) {
                                 $scope[schemaEntry.select2.s2query].query({
-                                    term: anObject[fieldname][n].x.text || anObject[fieldname][n].text || anObject[fieldname][n].x || anObject[fieldname][n],
+                                    term: fieldValue[n].x.text || fieldValue[n].text || fieldValue[n].x || fieldValue[n],
                                     callback: function (array) {
                                         if (array.results.length > 0) {
-                                            if (anObject[fieldname][n].x) {
-                                                anObject[fieldname][n].x = array.results[0];
+                                            if (fieldValue[n].x) {
+                                                if (fieldName.indexOf('.') !== -1) {throw new Error('Trying to directly assign to a nested field 342');}
+                                                anObject[fieldName][n].x = array.results[0];
                                             } else {
-                                                anObject[fieldname][n] = array.results[0];
+                                              if (fieldName.indexOf('.') !== -1) {throw new Error('Trying to directly assign to a nested field 345');}
+                                              anObject[fieldName][n] = array.results[0];
                                             }
                                         }
                                     }
@@ -2781,10 +2802,11 @@ formsAngular.factory('recordHandler', function (
                             }
                         } else {
                             $scope[schemaEntry.select2.s2query].query({
-                                term: anObject[fieldname],
+                                term: fieldValue,
                                 callback: function (array) {
                                     if (array.results.length > 0) {
-                                        anObject[fieldname] = array.results[0];
+                                        if (fieldName.indexOf('.') !== -1) {throw new Error('Trying to directly assign to a nested field 357');}
+                                        anObject[fieldName] = array.results[0];
                                     }
                                 }
                             });
@@ -2793,9 +2815,9 @@ formsAngular.factory('recordHandler', function (
                 } else if (schemaEntry.select2) {
                   // Do nothing with these - handled elsewhere (and deprecated)
                   void(schemaEntry.select2);
-                } else if (anObject[fieldname] && $scope.conversions[schemaEntry.name] && $scope.conversions[schemaEntry.name].fngajax) {
+                } else if (fieldValue && $scope.conversions[schemaEntry.name] && $scope.conversions[schemaEntry.name].fngajax) {
                   var conversionEntry = schemaEntry;
-                  $scope.conversions[conversionEntry.name].fngajax(anObject[fieldname], conversionEntry, function(updateEntry, value) {
+                  $scope.conversions[conversionEntry.name].fngajax(fieldValue, conversionEntry, function(updateEntry, value) {
                     // Update the master and (preserving pristine if appropriate) the record
                     exports.setData(master, updateEntry.name, undefined, value);
                     exports.preservePristine(angular.element('#'+updateEntry.id), function() {
@@ -3306,12 +3328,12 @@ angular.module('formsAngular').run(['$templateCache', function($templateCache) {
 
 
   $templateCache.put('template/search-bs2.html',
-    "<form class=\"navbar-search pull-right\"><div id=search-cg class=control-group ng-class=errorClass><input id=searchinput ng-model=searchTarget class=search-query placeholder=\"Ctrl+Slash to Search\" ng-keyup=handleKey($event)></div></form><div class=results-container ng-show=\"results.length >= 1\"><div class=search-results><div ng-repeat=\"result in results\"><span ng-class=resultClass($index) ng-click=selectResult($index)>{{result.resourceText}} {{result.text}}</span></div><div ng-show=\"moreCount > 0\">(plus more - continue typing to narrow down search...)</div></div></div>"
+    "<form class=\"navbar-search pull-right\"><div id=search-cg class=control-group ng-class=errorClass><input id=searchinput ng-model=searchTarget class=search-query placeholder=\"Ctrl + / to Search\" ng-keyup=handleKey($event)></div></form><div class=results-container ng-show=\"results.length >= 1\"><div class=search-results><div ng-repeat=\"result in results\"><span ng-class=resultClass($index) ng-click=selectResult($index)>{{result.resourceText}} {{result.text}}</span></div><div ng-show=\"moreCount > 0\">(plus more - continue typing to narrow down search...)</div></div></div>"
   );
 
 
   $templateCache.put('template/search-bs3.html',
-    "<form class=\"pull-right navbar-form\"><div id=search-cg class=form-group ng-class=errorClass><input id=searchinput ng-model=searchTarget class=\"search-query form-control\" placeholder=\"Ctrl+Slash to Search\" ng-keyup=handleKey($event)></div></form><div class=results-container ng-show=\"results.length >= 1\"><div class=search-results><div ng-repeat=\"result in results\"><span ng-class=resultClass($index) ng-click=selectResult($index)>{{result.resourceText}} {{result.text}}</span></div><div ng-show=\"moreCount > 0\">(plus more - continue typing to narrow down search...)</div></div></div>"
+    "<form class=\"pull-right navbar-form\"><div id=search-cg class=form-group ng-class=errorClass><input id=searchinput ng-model=searchTarget class=\"search-query form-control\" placeholder=\"Ctrl + / to Search\" ng-keyup=handleKey($event)></div></form><div class=results-container ng-show=\"results.length >= 1\"><div class=search-results><div ng-repeat=\"result in results\"><span ng-class=resultClass($index) ng-click=selectResult($index)>{{result.resourceText}} {{result.text}}</span></div><div ng-show=\"moreCount > 0\">(plus more - continue typing to narrow down search...)</div></div></div>"
   );
 
 }]);

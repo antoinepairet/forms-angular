@@ -266,7 +266,6 @@ formsAngular.factory('formGenerator', function (
                                         $location.path('/404');
                                       }
                                       var display = {id: theId, text: data.list};
-                                      recordHandler.setData(ctrlState.master, formInstructions.name, element, display);
                                       recordHandler.preservePristine(element, function () {
                                         callback(display);
                                       });
@@ -347,7 +346,7 @@ formsAngular.factory('formGenerator', function (
                     formInstructions.type = 'text';
                 } else {
                     formInstructions.type = 'text';
-                    formInstructions.add = 'ui-date ui-date-format datepicker-popup ';
+                    formInstructions.add = 'ui-date ui-date-format datepicker-popup-fix ';
                 }
             }
         } else if (mongooseType.instance === 'boolean') {
@@ -678,7 +677,7 @@ formsAngular.factory('formGenerator', function (
 
         // Useful utility when debugging
         $scope.toJSON = function (obj) {
-            return JSON.stringify(obj, null, 2);
+            return 'The toJSON function is deprecated - use the json filter instead\n\n' + JSON.stringify(obj, null, 2);
         };
 
         $scope.baseSchema = function () {
