@@ -1,8 +1,3 @@
-body {
-  position: relative;
-  padding-top: 40px;
-}
-
 .list-item {
   .well;
 }
@@ -131,7 +126,14 @@ form {
     /* padding-left is too small at 12 if inline help is not used*/
     padding-left: 12px
   }
-  input.ng-invalid-required, select.fng-invalid-required {
+  span:first-child input[type="radio"].ng-invalid-required:after {
+    content:"*";
+    font-weight: bold;
+    color: red;
+    /* padding-left is too small at 12 if inline help is not used*/
+    padding-left: 12px
+  }
+  input.ng-invalid-required, select.fng-invalid-required,  select.ng-invalid-required, textarea.ng-invalid-required {
     background-color: rgba(255, 0, 0, 0.10);
   }
   option {
@@ -176,4 +178,9 @@ form {
   }
 }
 
-
+.dropdown-menu > .disabled > li,
+.dropdown-menu > .disabled > a,
+.dropdown-menu > .disabled > a:hover,
+.dropdown-menu > .disabled > a:focus {
+  cursor: not-allowed;
+}

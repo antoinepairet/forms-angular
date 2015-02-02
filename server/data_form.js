@@ -20,7 +20,10 @@ function logTheAPICalls(req, res, next) {
 
 function processArgs(options, array) {
   if (options.authentication) {
-    array.splice(1, 0, options.authentication);
+    var authArray = _.isArray(options.authentication) ? options.authentication : [options.authentication];
+    for (var i = authArray.length - 1; i >= 0; i--) {
+      array.splice(1, 0, authArray[i]);
+    }
   }
   if (debug) {
     array.splice(1, 0, logTheAPICalls);
@@ -65,7 +68,9 @@ DataForm.prototype.getListFields = function (resource, doc) {
 
   if (listFields) {
     for (; listElement < listFields.length; listElement++) {
-      display += doc[listFields[listElement].field] + ' ';
+        if (typeof doc[listFields[listElement].field] !== 'undefined') {
+            display += doc[listFields[listElement].field] + ' ';
+        }
     }
   } else {
     var keyList = Object.keys(resource.model.schema.tree);
@@ -457,7 +462,7 @@ DataForm.prototype.preprocess = function (paths, formSchema) {
 DataForm.prototype.schema = function () {
   return _.bind(function (req, res) {
     if (!(req.resource = this.getResource(req.params.resourceName))) {
-      return res.send(404);
+      return res.status(404).end();
     }
     var formSchema = null;
     if (req.params.formName) {

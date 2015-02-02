@@ -7,7 +7,6 @@ formsAngular.controller('BaseCtrl', [
               $data, SchemasService, routingService, formGenerator, recordHandler) {
 
         var sharedStuff = $data;
-
         var ctrlState = {
             master: {},
             fngInvalidRequired: 'fng-invalid-required',
@@ -23,6 +22,12 @@ formsAngular.controller('BaseCtrl', [
 
         recordHandler.fillFormWithBackendSchema($scope, formGenerator, recordHandler, ctrlState, recordHandler.handleError($scope));
 
+        // Tell the 'model controllers' that they can start fiddling with basescope
+        for (var i = 0 ; i < sharedStuff.modelControllers.length ; i++) {
+          if (sharedStuff.modelControllers[i].onBaseCtrlReady) {
+            sharedStuff.modelControllers[i].onBaseCtrlReady($scope);
+          }
+        }
     }
 ])
     .controller('SaveChangesModalCtrl', ['$scope', '$modalInstance', function ($scope, $modalInstance) {

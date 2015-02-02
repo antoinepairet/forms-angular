@@ -1,5 +1,15 @@
 # forms-angular
 
+## 0.4 to 0.5
+### Summary
+* Required and readonly now work consistently across input types
+* Some styling improvements for required fields
+
+### BREAKING CHANGES
+* Changed id generation to remove . characters.  This may break some tests (but the . characters themselves were upsetting 
+some testing software).
+* Removed body padding from styling.  If you use a navbar you should put body {padding-top: 40px} (or required navbar height) in your styling. 
+
 ## 0.3 to 0.4
 ### Summary
 * Split the project into multiple repos and made a yeoman generator

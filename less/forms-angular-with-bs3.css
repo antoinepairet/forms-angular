@@ -5782,10 +5782,6 @@ button.close {
     display: none !important;
   }
 }
-body {
-  position: relative;
-  padding-top: 40px;
-}
 .list-item {
   min-height: 20px;
   padding: 19px;
@@ -5919,8 +5915,17 @@ form input[type="checkbox"].ng-invalid-required:after {
   /* padding-left is too small at 12 if inline help is not used*/
   padding-left: 12px;
 }
+form span:first-child input[type="radio"].ng-invalid-required:after {
+  content: "*";
+  font-weight: bold;
+  color: red;
+  /* padding-left is too small at 12 if inline help is not used*/
+  padding-left: 12px;
+}
 form input.ng-invalid-required,
-form select.fng-invalid-required {
+form select.fng-invalid-required,
+form select.ng-invalid-required,
+form textarea.ng-invalid-required {
   background-color: rgba(255, 0, 0, 0.1);
 }
 form option {
@@ -5959,6 +5964,12 @@ form .form-inline > .sub-doc {
 }
 .search-results .search-result.focus {
   color: white;
+}
+.dropdown-menu > .disabled > li,
+.dropdown-menu > .disabled > a,
+.dropdown-menu > .disabled > a:hover,
+.dropdown-menu > .disabled > a:focus {
+  cursor: not-allowed;
 }
 .list-item {
   padding: 9px;

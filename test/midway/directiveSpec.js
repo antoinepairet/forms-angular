@@ -81,7 +81,10 @@ describe('directive with form', function () {
       var friend = scope.record.friendList[0];
       scope.frdShowDetails(friend);
       $httpBackend.flush();
-      var elem = angular.element(elm.find('div')[17]);
+      var elem = angular.element(elm.find('form'));
+      elem = angular.element(angular.element(elem.children())[2]);
+      elem = angular.element(angular.element(elem.children())[1]);
+      elem = angular.element(angular.element(elem.children())[1]);
       expect(elem).toHaveClass('friends-head');
       expect(elem.text()).toMatch(/Andrew/);
       expect(elem.text()).toMatch(/TestPerson2/);
