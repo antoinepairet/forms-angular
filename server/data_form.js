@@ -274,10 +274,11 @@ DataForm.prototype.internalSearch = function (req, resourcesToSearch, includeRes
 
             // Do we already have them in the list?
             var thisId = docs[k]._id,
+              thisIdStr = String(thisId),
               resultObject,
               resultPos;
             for (resultPos = results.length - 1; resultPos >= 0; resultPos--) {
-              if (results[resultPos].id.id === thisId.id) {
+              if (String(results[resultPos].id) === thisIdStr) {
                 break;
               }
             }

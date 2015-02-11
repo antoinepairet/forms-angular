@@ -50,35 +50,6 @@ formsAngular
         var subkeys = [];
         var tabsSetup = false;
 
-        var generateNgShow = function (showWhen, model) {
-
-          function evaluateSide(side) {
-            var result = side;
-            if (typeof side === 'string') {
-              if (side.slice(0, 1) === '$') {
-                result = (model || 'record') + '.';
-                var parts = side.slice(1).split('.');
-                if (parts.length > 1) {
-                  var lastBit = parts.pop();
-                  result += parts.join('.') + '[$index].' + lastBit;
-                } else {
-                  result += side.slice(1);
-                }
-              } else {
-                result = '\'' + side + '\'';
-              }
-            }
-            return result;
-          }
-
-          var conditionText = ['eq', 'ne', 'gt', 'gte', 'lt', 'lte'],
-            conditionSymbols = ['===', '!==', '>', '>=', '<', '<='],
-            conditionPos = conditionText.indexOf(showWhen.comp);
-
-          if (conditionPos === -1) { throw new Error('Invalid comparison in showWhen'); }
-          return evaluateSide(showWhen.lhs) + conditionSymbols[conditionPos] + evaluateSide(showWhen.rhs);
-        };
-
         var generateInput = function (fieldInfo, modelString, isRequired, idString, options) {
           var nameString;
           if (!modelString) {
@@ -301,30 +272,7 @@ formsAngular
         };
 
         var handleField = function (info, options) {
-          var includeIndex = false;
-          var insert = '';
-          if (options.index) {
-            try {
-              parseInt(options.index);
-              includeIndex = true;
-            } catch (err) {
-              // Nothing to do
-            }
-          }
-          if (info.showWhen) {
-            if (typeof info.showWhen === 'string') {
-              insert += 'ng-show="' + info.showWhen + '"';
-            } else {
-              insert += 'ng-show="' + generateNgShow(info.showWhen, options.model) + '"';
-            }
-          }
-          if (includeIndex) {
-            insert += ' id="cg_' + info.id.replace('_', '-' + attrs.index + '-') + '"';
-          } else {
-            insert += ' id="cg_' + info.id.replace(/\./g, '-') + '"';
-          }
-
-          var fieldChrome = formMarkupHelper.fieldChrome(scope, info, options, insert);
+          var fieldChrome = formMarkupHelper.fieldChrome(scope, info, options);
           var template = fieldChrome.template;
 
           if (info.schema) {
@@ -363,29 +311,29 @@ formsAngular
                   '<div ng-form class="' + (cssFrameworkService.framework() === 'bs2' ? 'row-fluid ' : '') +
                   convertFormStyleToClass(info.formStyle) + '" name="form_' + niceName + '{{$index}}" class="sub-doc well" id="' + info.id + 'List_{{$index}}" ' +
                   ' ng-repeat="subDoc in ' + (options.model || 'record') + '.' + info.name + ' track by $index">' +
-                  '   <div class="' + (cssFrameworkService.framework() === 'bs2' ? 'row-fluid' : 'row') + ' sub-doc">' +
-                  '      <div class="pull-left">' + processInstructions(info.schema, false, {subschema: true, formstyle: info.formStyle, model: options.model, subschemaRoot: info.name}) +
-                  '      </div>';
-
+                  '   <div class="' + (cssFrameworkService.framework() === 'bs2' ? 'row-fluid' : 'row') + ' sub-doc">';
                 if (!info.noRemove || info.customSubDoc) {
-                  template += '   <div class="pull-left sub-doc-btns">';
+                  template += '   <div class="sub-doc-btns">';
                   if (info.customSubDoc) {
                     template += info.customSubDoc;
                   }
                   if (!info.noRemove) {
                     if (cssFrameworkService.framework() === 'bs2') {
                       template += '      <button name="remove_' + info.id + '_btn" class="remove-btn btn btn-mini form-btn" ng-click="remove(\'' + info.name + '\',$index,$event)">' +
-                        '          <i class="icon-minus">';
+                      '          <i class="icon-minus">';
 
                     } else {
                       template += '      <button name="remove_' + info.id + '_btn" class="remove-btn btn btn-default btn-xs form-btn" ng-click="remove(\'' + info.name + '\',$index,$event)">' +
                       '          <i class="glyphicon glyphicon-minus">';
                     }
                     template += '          </i> Remove' +
-                      '      </button>';
+                    '      </button>';
                   }
                   template += '  </div> ';
                 }
+
+                template += processInstructions(info.schema, false, {subschema: true, formstyle: info.formStyle, model: options.model, subschemaRoot: info.name});
+
                 template += '   </div>' +
                   '</div>';
                 if (!info.noAdd || info.customFooter) {
@@ -436,6 +384,10 @@ formsAngular
 //              var processInstructions = function (instructionsArray, topLevel, groupId) {
 //  removing groupId as it was only used when called by containerType container, which is removed for now
         var processInstructions = function (instructionsArray, topLevel, options) {
+          if (options.index) {
+            alert('Found where options index is used');                // This is tested for shen generating field chrome, but cannot see how it is ever generated.  Redundant?  AM removing 9/2/15
+            throw new Error('Found where options index is used');
+          }
           var result = '';
           if (instructionsArray) {
             for (var anInstruction = 0; anInstruction < instructionsArray.length; anInstruction++) {
@@ -501,6 +453,12 @@ formsAngular
                     }
                   }
                 }
+                for (prop in options) {
+                  if (options.hasOwnProperty(prop) && prop[0] !== '$' && typeof options[prop] !== 'undefined') {
+                    newElement += ' fng-opt-' + prop + '="' + options[prop].toString().replace(/"/g,'&quot;') + '"';
+                  }
+                }
+
                 newElement += '></' + directiveName + '>';
                 result += newElement;
                 callHandleField = false;

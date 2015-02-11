@@ -619,17 +619,7 @@ formsAngular.factory('recordHandler', function (
             if (!ctrlState.allowLocationChange && !$scope.isCancelDisabled()) {
                 event.preventDefault();
                 var modalInstance = $modal.open({
-                    template: '<div class="modal-header">' +
-                        '   <h3>Record modified</h3>' +
-                        '</div>' +
-                        '<div class="modal-body">' +
-                        '   <p>Would you like to save your changes?</p>' +
-                        '</div>' +
-                        '<div class="modal-footer">' +
-                        '    <button class="btn btn-primary dlg-yes" ng-click="yes()">Yes</button>' +
-                        '    <button class="btn btn-warning dlg-no" ng-click="no()">No</button>' +
-                        '    <button class="btn dlg-cancel" ng-click="cancel()">Cancel</button>' +
-                        '</div>',
+                    templateUrl: 'template/confirmationModalLocationChange.html',
                     controller: 'SaveChangesModalCtrl',
                     backdrop: 'static'
                 });
@@ -650,16 +640,7 @@ formsAngular.factory('recordHandler', function (
         $scope.deleteClick = function () {
             if ($scope.record._id) {
                 var modalInstance = $modal.open({
-                    template: '<div class="modal-header">' +
-                        '   <h3>Delete Item</h3>' +
-                        '</div>' +
-                        '<div class="modal-body">' +
-                        '   <p>Are you sure you want to delete this record?</p>' +
-                        '</div>' +
-                        '<div class="modal-footer">' +
-                        '    <button class="btn btn-primary dlg-no" ng-click="cancel()">No</button>' +
-                        '    <button class="btn btn-warning dlg-yes" ng-click="yes()">Yes</button>' +
-                        '</div>',
+                    templateUrl: 'template/confirmationModalDelete',
                     controller: 'SaveChangesModalCtrl',
                     backdrop: 'static'
                 });
