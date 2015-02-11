@@ -27,18 +27,29 @@ formsAngular.provider('routingService', [ '$injector', '$locationProvider', func
   var lastRoute = null,
     lastObject = {};
 
-  function _setUpNgRoutes(routes) {
+  function _setUpNgRoutes(routes, prefix, additional) {
+    prefix = prefix || '';
     angular.forEach(routes, function (routeSpec) {
-      _routeProvider.when(config.prefix + routeSpec.route, routeSpec.options || {templateUrl: routeSpec.templateUrl});
+      _routeProvider.when(prefix + routeSpec.route, angular.extend(routeSpec.options || {templateUrl: routeSpec.templateUrl}, additional));
     });
+    // This next bit is just for the demo website to allow demonstrating multiple frameworks - not available with other routers
+    if (config.variantsForDemoWebsite) {
+      angular.forEach(config.variantsForDemoWebsite, function(variant) {
+        angular.forEach(routes, function (routeSpec) {
+          _routeProvider.when(prefix + variant + routeSpec.route, angular.extend(routeSpec.options || {templateUrl: routeSpec.templateUrl}, additional));
+        });
+      });
+    }
   }
 
-  function _setUpUIRoutes(routes) {
+  function _setUpUIRoutes(routes, prefix, additional) {
+    prefix = prefix || '';
     angular.forEach(routes, function (routeSpec) {
-      _stateProvider.state(routeSpec.state, routeSpec.options || {
-        url: routeSpec.route,
+      _stateProvider.state(routeSpec.state, angular.extend(routeSpec.options || {
+        url: prefix + routeSpec.route,
         templateUrl: routeSpec.templateUrl
-      });
+        }, additional)
+      );
     });
   }
 
@@ -61,6 +72,18 @@ formsAngular.provider('routingService', [ '$injector', '$locationProvider', func
   }
 
   return {
+    /*
+        options:
+           prefix:        A string (such as '/db') that gets prepended to all the generated routes.  This can be used to
+                          prevent generated routes (which have a lot of parameters) from clashing with other routes in
+                          the web app that have nothing to do with CRUD forms
+           add2fngRoutes: An object to add to the generated routes.  One user case would be to add {authenticate: true}
+                          so that the client authenticates for certain routes
+           html5Mode:     boolean
+           routing:       Must be 'ngroute' or 'uirouter'
+
+
+     */
     start: function (options) {
       angular.extend(config, options);
       if (config.prefix[0] && config.prefix[0] !== '/') { config.prefix = '/' + config.prefix; }
@@ -72,13 +95,13 @@ formsAngular.provider('routingService', [ '$injector', '$locationProvider', func
         case 'ngroute' :
           _routeProvider = $injector.get('$routeProvider');
           if (config.fixedRoutes) { _setUpNgRoutes(config.fixedRoutes); }
-          _setUpNgRoutes(builtInRoutes);
+          _setUpNgRoutes(builtInRoutes, config.prefix, options.add2fngRoutes);
           break;
         case 'uirouter' :
           _stateProvider = $injector.get('$stateProvider');
           if (config.fixedRoutes) { _setUpUIRoutes(config.fixedRoutes); }
           setTimeout(function () {
-            _setUpUIRoutes(builtInRoutes);
+            _setUpUIRoutes(builtInRoutes, config.prefix, options.add2fngRoutes);
           });
           break;
       }
@@ -101,6 +124,15 @@ formsAngular.provider('routingService', [ '$injector', '$locationProvider', func
               }
 
               var locationSplit = location.split('/');
+
+              // get rid of variant if present - just used for demo website
+              if (config.variants) {
+                if (config.variants.indexOf(locationSplit[1]) !== -1) {
+                  lastObject.variant = locationSplit[1];
+                  locationSplit.shift();
+                }
+              }
+
               var locationParts = locationSplit.length;
               if (locationSplit[1] === 'analyse') {
                 lastObject.analyse = true;

@@ -1,4 +1,4 @@
-/*! forms-angular 2015-02-02 */
+/*! forms-angular 2015-02-11 */
 'use strict';
 
 var formsAngular = angular.module('formsAngular', [
@@ -12,9 +12,9 @@ void(formsAngular);  // Make jshint happy
 'use strict';
 
 formsAngular.controller('BaseCtrl', [
-    '$scope', '$location', '$filter', '$modal', '$window',
+    '$scope', '$rootScope', '$location', '$filter', '$modal', '$window',
     '$data', 'SchemasService', 'routingService', 'formGenerator', 'recordHandler',
-    function ($scope, $location, $filter, $modal, $window,
+    function ($scope, $rootScope, $location, $filter, $modal, $window,
               $data, SchemasService, routingService, formGenerator, recordHandler) {
 
         var sharedStuff = $data;
@@ -27,6 +27,8 @@ formsAngular.controller('BaseCtrl', [
         angular.extend($scope, routingService.parsePathFunc()($location.$$path));
 
         $scope.modelNameDisplay = sharedStuff.modelNameDisplay || $filter('titleCase')($scope.modelName);
+
+        $rootScope.$broadcast('fngFormLoadStart', $scope);
 
         formGenerator.decorateScope($scope, formGenerator, recordHandler, sharedStuff);
         recordHandler.decorateScope($scope, $modal, recordHandler, ctrlState);
@@ -41,17 +43,17 @@ formsAngular.controller('BaseCtrl', [
         }
     }
 ])
-    .controller('SaveChangesModalCtrl', ['$scope', '$modalInstance', function ($scope, $modalInstance) {
-        $scope.yes = function () {
-            $modalInstance.close(true);
-        };
-        $scope.no = function () {
-            $modalInstance.close(false);
-        };
-        $scope.cancel = function () {
-            $modalInstance.dismiss('cancel');
-        };
-    }]);
+.controller('SaveChangesModalCtrl', ['$scope', '$modalInstance', function ($scope, $modalInstance) {
+  $scope.yes = function () {
+    $modalInstance.close(true);
+  };
+  $scope.no = function () {
+    $modalInstance.close(false);
+  };
+  $scope.cancel = function () {
+    $modalInstance.dismiss('cancel');
+  };
+}]);
 
 'use strict';
 
@@ -277,35 +279,6 @@ formsAngular
         var subkeys = [];
         var tabsSetup = false;
 
-        var generateNgShow = function (showWhen, model) {
-
-          function evaluateSide(side) {
-            var result = side;
-            if (typeof side === 'string') {
-              if (side.slice(0, 1) === '$') {
-                result = (model || 'record') + '.';
-                var parts = side.slice(1).split('.');
-                if (parts.length > 1) {
-                  var lastBit = parts.pop();
-                  result += parts.join('.') + '[$index].' + lastBit;
-                } else {
-                  result += side.slice(1);
-                }
-              } else {
-                result = '\'' + side + '\'';
-              }
-            }
-            return result;
-          }
-
-          var conditionText = ['eq', 'ne', 'gt', 'gte', 'lt', 'lte'],
-            conditionSymbols = ['===', '!==', '>', '>=', '<', '<='],
-            conditionPos = conditionText.indexOf(showWhen.comp);
-
-          if (conditionPos === -1) { throw new Error('Invalid comparison in showWhen'); }
-          return evaluateSide(showWhen.lhs) + conditionSymbols[conditionPos] + evaluateSide(showWhen.rhs);
-        };
-
         var generateInput = function (fieldInfo, modelString, isRequired, idString, options) {
           var nameString;
           if (!modelString) {
@@ -528,30 +501,7 @@ formsAngular
         };
 
         var handleField = function (info, options) {
-          var includeIndex = false;
-          var insert = '';
-          if (options.index) {
-            try {
-              parseInt(options.index);
-              includeIndex = true;
-            } catch (err) {
-              // Nothing to do
-            }
-          }
-          if (info.showWhen) {
-            if (typeof info.showWhen === 'string') {
-              insert += 'ng-show="' + info.showWhen + '"';
-            } else {
-              insert += 'ng-show="' + generateNgShow(info.showWhen, options.model) + '"';
-            }
-          }
-          if (includeIndex) {
-            insert += ' id="cg_' + info.id.replace('_', '-' + attrs.index + '-') + '"';
-          } else {
-            insert += ' id="cg_' + info.id.replace(/\./g, '-') + '"';
-          }
-
-          var fieldChrome = formMarkupHelper.fieldChrome(scope, info, options, insert);
+          var fieldChrome = formMarkupHelper.fieldChrome(scope, info, options);
           var template = fieldChrome.template;
 
           if (info.schema) {
@@ -590,29 +540,29 @@ formsAngular
                   '<div ng-form class="' + (cssFrameworkService.framework() === 'bs2' ? 'row-fluid ' : '') +
                   convertFormStyleToClass(info.formStyle) + '" name="form_' + niceName + '{{$index}}" class="sub-doc well" id="' + info.id + 'List_{{$index}}" ' +
                   ' ng-repeat="subDoc in ' + (options.model || 'record') + '.' + info.name + ' track by $index">' +
-                  '   <div class="' + (cssFrameworkService.framework() === 'bs2' ? 'row-fluid' : 'row') + ' sub-doc">' +
-                  '      <div class="pull-left">' + processInstructions(info.schema, false, {subschema: true, formstyle: info.formStyle, model: options.model, subschemaRoot: info.name}) +
-                  '      </div>';
-
+                  '   <div class="' + (cssFrameworkService.framework() === 'bs2' ? 'row-fluid' : 'row') + ' sub-doc">';
                 if (!info.noRemove || info.customSubDoc) {
-                  template += '   <div class="pull-left sub-doc-btns">';
+                  template += '   <div class="sub-doc-btns">';
                   if (info.customSubDoc) {
                     template += info.customSubDoc;
                   }
                   if (!info.noRemove) {
                     if (cssFrameworkService.framework() === 'bs2') {
                       template += '      <button name="remove_' + info.id + '_btn" class="remove-btn btn btn-mini form-btn" ng-click="remove(\'' + info.name + '\',$index,$event)">' +
-                        '          <i class="icon-minus">';
+                      '          <i class="icon-minus">';
 
                     } else {
                       template += '      <button name="remove_' + info.id + '_btn" class="remove-btn btn btn-default btn-xs form-btn" ng-click="remove(\'' + info.name + '\',$index,$event)">' +
                       '          <i class="glyphicon glyphicon-minus">';
                     }
                     template += '          </i> Remove' +
-                      '      </button>';
+                    '      </button>';
                   }
                   template += '  </div> ';
                 }
+
+                template += processInstructions(info.schema, false, {subschema: true, formstyle: info.formStyle, model: options.model, subschemaRoot: info.name});
+
                 template += '   </div>' +
                   '</div>';
                 if (!info.noAdd || info.customFooter) {
@@ -663,6 +613,10 @@ formsAngular
 //              var processInstructions = function (instructionsArray, topLevel, groupId) {
 //  removing groupId as it was only used when called by containerType container, which is removed for now
         var processInstructions = function (instructionsArray, topLevel, options) {
+          if (options.index) {
+            alert('Found where options index is used');                // This is tested for shen generating field chrome, but cannot see how it is ever generated.  Redundant?  AM removing 9/2/15
+            throw new Error('Found where options index is used');
+          }
           var result = '';
           if (instructionsArray) {
             for (var anInstruction = 0; anInstruction < instructionsArray.length; anInstruction++) {
@@ -728,6 +682,12 @@ formsAngular
                     }
                   }
                 }
+                for (prop in options) {
+                  if (options.hasOwnProperty(prop) && prop[0] !== '$' && typeof options[prop] !== 'undefined') {
+                    newElement += ' fng-opt-' + prop + '="' + options[prop].toString().replace(/"/g,'&quot;') + '"';
+                  }
+                }
+
                 newElement += '></' + directiveName + '>';
                 result += newElement;
                 callHandleField = false;
@@ -1142,6 +1102,10 @@ formsAngular.provider('cssFrameworkService', [function () {
         framework: function () {
           return config.framework;
         },
+        // This next function is just for the demo website - don't use it
+        setFrameworkForDemoWebsite: function (framework) {
+          config.framework = framework;
+        },
         span: function (cols) {
           var result;
           switch (config.framework) {
@@ -1229,18 +1193,29 @@ formsAngular.provider('routingService', [ '$injector', '$locationProvider', func
   var lastRoute = null,
     lastObject = {};
 
-  function _setUpNgRoutes(routes) {
+  function _setUpNgRoutes(routes, prefix, additional) {
+    prefix = prefix || '';
     angular.forEach(routes, function (routeSpec) {
-      _routeProvider.when(config.prefix + routeSpec.route, routeSpec.options || {templateUrl: routeSpec.templateUrl});
+      _routeProvider.when(prefix + routeSpec.route, angular.extend(routeSpec.options || {templateUrl: routeSpec.templateUrl}, additional));
     });
+    // This next bit is just for the demo website to allow demonstrating multiple frameworks - not available with other routers
+    if (config.variantsForDemoWebsite) {
+      angular.forEach(config.variantsForDemoWebsite, function(variant) {
+        angular.forEach(routes, function (routeSpec) {
+          _routeProvider.when(prefix + variant + routeSpec.route, angular.extend(routeSpec.options || {templateUrl: routeSpec.templateUrl}, additional));
+        });
+      });
+    }
   }
 
-  function _setUpUIRoutes(routes) {
+  function _setUpUIRoutes(routes, prefix, additional) {
+    prefix = prefix || '';
     angular.forEach(routes, function (routeSpec) {
-      _stateProvider.state(routeSpec.state, routeSpec.options || {
-        url: routeSpec.route,
+      _stateProvider.state(routeSpec.state, angular.extend(routeSpec.options || {
+        url: prefix + routeSpec.route,
         templateUrl: routeSpec.templateUrl
-      });
+        }, additional)
+      );
     });
   }
 
@@ -1263,6 +1238,18 @@ formsAngular.provider('routingService', [ '$injector', '$locationProvider', func
   }
 
   return {
+    /*
+        options:
+           prefix:        A string (such as '/db') that gets prepended to all the generated routes.  This can be used to
+                          prevent generated routes (which have a lot of parameters) from clashing with other routes in
+                          the web app that have nothing to do with CRUD forms
+           add2fngRoutes: An object to add to the generated routes.  One user case would be to add {authenticate: true}
+                          so that the client authenticates for certain routes
+           html5Mode:     boolean
+           routing:       Must be 'ngroute' or 'uirouter'
+
+
+     */
     start: function (options) {
       angular.extend(config, options);
       if (config.prefix[0] && config.prefix[0] !== '/') { config.prefix = '/' + config.prefix; }
@@ -1274,13 +1261,13 @@ formsAngular.provider('routingService', [ '$injector', '$locationProvider', func
         case 'ngroute' :
           _routeProvider = $injector.get('$routeProvider');
           if (config.fixedRoutes) { _setUpNgRoutes(config.fixedRoutes); }
-          _setUpNgRoutes(builtInRoutes);
+          _setUpNgRoutes(builtInRoutes, config.prefix, options.add2fngRoutes);
           break;
         case 'uirouter' :
           _stateProvider = $injector.get('$stateProvider');
           if (config.fixedRoutes) { _setUpUIRoutes(config.fixedRoutes); }
           setTimeout(function () {
-            _setUpUIRoutes(builtInRoutes);
+            _setUpUIRoutes(builtInRoutes, config.prefix, options.add2fngRoutes);
           });
           break;
       }
@@ -1303,6 +1290,15 @@ formsAngular.provider('routingService', [ '$injector', '$locationProvider', func
               }
 
               var locationSplit = location.split('/');
+
+              // get rid of variant if present - just used for demo website
+              if (config.variants) {
+                if (config.variants.indexOf(locationSplit[1]) !== -1) {
+                  lastObject.variant = locationSplit[1];
+                  locationSplit.shift();
+                }
+              }
+
               var locationParts = locationSplit.length;
               if (locationSplit[1] === 'analyse') {
                 lastObject.analyse = true;
@@ -2103,7 +2099,7 @@ formsAngular.factory('formGenerator', function (
 
         // Useful utility when debugging
         $scope.toJSON = function (obj) {
-            return JSON.stringify(obj, null, 2);
+            return 'The toJSON function is deprecated - use the json filter instead\n\n' + JSON.stringify(obj, null, 2);
         };
 
         $scope.baseSchema = function () {
@@ -2122,14 +2118,57 @@ formsAngular.factory('formMarkupHelper', [
   function (cssFrameworkService, inputSizeHelper, addAllService) {
     var exports = {};
 
+    function generateNgShow(showWhen, model) {
+
+      function evaluateSide(side) {
+        var result = side;
+        if (typeof side === 'string') {
+          if (side.slice(0, 1) === '$') {
+            result = (model || 'record') + '.';
+            var parts = side.slice(1).split('.');
+            if (parts.length > 1) {
+              var lastBit = parts.pop();
+              result += parts.join('.') + '[$index].' + lastBit;
+            } else {
+              result += side.slice(1);
+            }
+          } else {
+            result = '\'' + side + '\'';
+          }
+        }
+        return result;
+      }
+
+      var conditionText = ['eq', 'ne', 'gt', 'gte', 'lt', 'lte'],
+        conditionSymbols = ['===', '!==', '>', '>=', '<', '<='],
+        conditionPos = conditionText.indexOf(showWhen.comp);
+
+      if (conditionPos === -1) { throw new Error('Invalid comparison in showWhen'); }
+      return evaluateSide(showWhen.lhs) + conditionSymbols[conditionPos] + evaluateSide(showWhen.rhs);
+    }
+
+
     exports.isHorizontalStyle = function (formStyle) {
       return (!formStyle || formStyle === 'undefined' || ['vertical', 'inline'].indexOf(formStyle) === -1);
     };
 
-    exports.fieldChrome = function (scope, info, options, insert) {
+    exports.fieldChrome = function (scope, info, options) {
       var classes = '';
       var template = '';
       var closeTag = '';
+      var insert = '';
+
+      info.showWhen = info.showWhen || info.showwhen;  //  deal with use within a directive
+
+      if (info.showWhen) {
+        if (typeof info.showWhen === 'string') {
+          insert += 'ng-show="' + info.showWhen + '"';
+        } else {
+          insert += 'ng-show="' + generateNgShow(info.showWhen, options.model) + '"';
+        }
+      }
+      insert += ' id="cg_' + info.id.replace(/\./g, '-') + '"';
+
 
       if (cssFrameworkService.framework() === 'bs3') {
         classes = 'form-group';
@@ -2221,13 +2260,13 @@ formsAngular.factory('formMarkupHelper', [
 
     exports.inputChrome = function (value, fieldInfo, options, markupVars) {
       if (cssFrameworkService.framework() === 'bs3' && exports.isHorizontalStyle(options.formstyle) && fieldInfo.type !== 'checkbox') {
-        value = '<div class="' + markupVars.sizeClassBS3 + '">' + value + '</div>';
+        value = '<div class="bs3-input ' + markupVars.sizeClassBS3 + '">' + value + '</div>';
       }
-      if (fieldInfo.helpInline && fieldInfo.type !== 'checkbox') {
-        value += '<span class="help-inline">' + fieldInfo.helpInline + '</span>';
+      if (fieldInfo.helpInline) {
+        value += '<span class="' + (cssFrameworkService.framework() === 'bs2' ? 'help-inline' : 'help-block') + '">' + fieldInfo.helpInline + '</span>';
       }
       if (fieldInfo.help) {
-        value += '<span class="help-block ' + markupVars.sizeClassBS3 + '">' + fieldInfo.help + '</span>';
+        value += '<span class="help-block">' + fieldInfo.help + '</span>';
       }
       return value;
     };
@@ -2311,18 +2350,20 @@ formsAngular.factory('pluginHelper', ['formMarkupHelper',function (formMarkupHel
 
   exports.extractFromAttr = function (attr, directiveName) {
     var info = {};
+    var options = {formStyle: attr.formstyle};
     var directiveOptions = {};
     var directiveNameLength = directiveName.length;
     for (var prop in attr) {
       if (attr.hasOwnProperty(prop)) {
         if (prop.slice(0, 6) === 'fngFld') {
-          info[prop.slice(6).toLowerCase()] = attr[prop].replace(/&quot;/g,'"');
+          info[prop.slice(6).toLowerCase()] = attr[prop].replace(/&quot;/g, '"');
+        } else if (prop.slice(0, 6) === 'fngOpt') {
+          options[prop.slice(6).toLowerCase()] = attr[prop].replace(/&quot;/g,'"');
         } else  if (prop.slice(0,directiveNameLength) === directiveName) {
           directiveOptions[prop.slice(directiveNameLength).toLowerCase()] = attr[prop].replace(/&quot;/g,'"');
         }
       }
     }
-    var options = {formStyle: attr.formstyle};
     return {info: info, options: options, directiveOptions: directiveOptions};
   };
 
@@ -2330,12 +2371,44 @@ formsAngular.factory('pluginHelper', ['formMarkupHelper',function (formMarkupHel
     var fieldChrome = formMarkupHelper.fieldChrome(scope, info, options,' id="cg_' + info.id + '"');
     var controlDivClasses = formMarkupHelper.controlDivClasses(options);
     var elementHtml = fieldChrome.template + formMarkupHelper.label(scope, info, addButtons, options);
-    var buildingBlocks;
+    var modelString, idString, nameString;
+
     if (addButtons) {
-      buildingBlocks = formMarkupHelper.allInputsVars(scope, info, options, 'arrayItem' + (needsX ? '.x' : ''), info.id + '_{{$index}}', info.name + '_{{$index}}');
+      modelString = 'arrayItem' + (needsX ? '.x' : '');
+      idString = info.id + '_{{$index}}';
+      nameString =info.name + '_{{$index}}';
     } else {
-      buildingBlocks = formMarkupHelper.allInputsVars(scope, info, options, model + '.' + info.name, info.id, info.name);
+      modelString = model + '.' + info.name;
+      idString = info.id;
+      nameString =info.name;
     }
+
+    if (options.subschema && info.name.indexOf('.') !== -1) {
+      // Schema handling - need to massage the ngModel and the id
+      var modelBase = model + '.';
+      var compoundName = info.name;
+      var root = options.subschemaroot;
+      var lastPart = compoundName.slice(root.length+1);
+      modelString = modelBase;
+
+      if (options.index) {
+        modelString += root + '[' + options.index + '].' + lastPart;
+        idString = 'f_' + modelString.slice(modelBase.length).replace(/(\.|\[|\]\.)/g, '-');
+      } else {
+        modelString += root;
+        if (options.subkey) {
+          idString = modelString.slice(modelBase.length).replace(/\./g, '-')+'-subkey'+options.subkeyno + '-' + lastPart;
+          modelString += '[' + '$_arrayOffset_' + root.replace(/\./g, '_') + '_' + options.subkeyno + '].' + lastPart;
+        } else {
+          modelString += '[$index].' + lastPart;
+          idString = null;
+          nameString = compoundName.replace(/\./g, '-');
+        }
+      }
+    }
+
+    var buildingBlocks = formMarkupHelper.allInputsVars(scope, info, options, modelString, idString, nameString);
+
     elementHtml += formMarkupHelper['handle' + (addButtons ? 'Array' : '') + 'InputAndControlDiv'](
       formMarkupHelper.inputChrome(
         generateInputControl(buildingBlocks),
