@@ -389,7 +389,6 @@ describe('API', function () {
       };
       var mockRes = {
         send: function (data) {
-          console.log('d', data);
           assert.equal(data.moreCount, 0);
           assert.equal(data.results[0].text, 'Æçcëntuée Prenom');  // Concatenation of last and firstname
           done();

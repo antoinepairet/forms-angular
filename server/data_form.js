@@ -253,7 +253,7 @@ DataForm.prototype.internalSearch = function (req, resourcesToSearch, includeRes
   var allTerms = _.uniq(normalizedTerms.concat(searchParts));
 
   searchCriteria = {$regex: '(' + allTerms.join('|') + ')', $options: 'i'};
-  console.log('sC', searchCriteria);
+
   this.searchFunc(
     searches,
     function (item, cb) {
