@@ -4,7 +4,7 @@
         surname: "Smith00",
         sex: 'M',
         bribeAmount: 123,
-        forename:  "John00"        
+        forename:  "John00"
     },
     {
         _id : ObjectId("51c583d5b9991226db418f01"),
@@ -50,7 +50,7 @@
     },
     {
         _id : ObjectId("51c583d5b9991226db418f07"),
-        surname: "Smith97",
+        surname: "Smith07",
         sex: 'F',
         bribeAmount: 0,
         forename:  "John07"
@@ -117,5 +117,12 @@
         sex: 'F',
         bribeAmount: 0,
         forename:  "John16"
+    },
+    {
+      _id : ObjectId("51c583d5b9991226db418f17"),
+      surname: "Æçcëntuée",
+      sex: 'M',
+      bribeAmount: 0,
+      forename:  "Prenom"
     }
 ]

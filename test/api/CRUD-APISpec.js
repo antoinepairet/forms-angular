@@ -320,20 +320,20 @@ describe('API', function () {
 
     it('should support searchOrder option', function (done) {
       var mockReq = {
-        url: '/search?q=Smi'
+        url: '/search?q=Smith0'
       };
       var mockRes = {
         send: function (data) {
           assert.equal(data.results.length, 10);
           assert.equal(data.results[0].text, 'Smith00 John00');
-          assert.equal(data.results[9].text, 'Smith10 John10');
-          assert.equal(JSON.stringify(data.results).indexOf('John07'), -1);
+          assert.equal(data.results[9].text, 'Smith09 John09');
+          assert.equal(JSON.stringify(data.results).indexOf('John10'), -1);
           done();
         }
       };
       fng.searchAll()(mockReq, mockRes);
     });
-  
+
     it('should find a record from a partial initial string', function (done) {
       var mockReq = {
         url: '/search?q=ann'
@@ -353,7 +353,7 @@ describe('API', function () {
 
     it('should find a record from multiple partial initial strings', function (done) {
       var mockReq = {
-        url: '/search?q=smi john04',
+        url: '/search?q=smi john04&l=10',
         route: {path : '/api/search'}
       };
       var mockRes = {
@@ -366,8 +366,39 @@ describe('API', function () {
       };
       fng.searchAll()(mockReq, mockRes);
     });
-  
-  
+
+    it('should find a record with letters with identical accent in search term and in record', function (done) {
+      var mockReq = {
+        url: '/search?q=Æçcëntuée',
+        route: {path : '/api/search'}
+      };
+      var mockRes = {
+        send: function (data) {
+          assert.equal(data.moreCount, 0);
+          assert.equal(data.results[0].text, 'Æçcëntuée Prenom');  // Concatenation of last and firstname
+          done();
+        }
+      };
+      fng.searchAll()(mockReq, mockRes);
+    });
+
+    it('should find a record with letters with accent in search term and not in record', function (done) {
+      var mockReq = {
+        url: '/search?q=Prénom',  // Extra-accent
+        route: {path : '/api/search'}
+      };
+      var mockRes = {
+        send: function (data) {
+          console.log('d', data);
+          assert.equal(data.moreCount, 0);
+          assert.equal(data.results[0].text, 'Æçcëntuée Prenom');  // Concatenation of last and firstname
+          done();
+        }
+      };
+      fng.searchAll()(mockReq, mockRes);
+    });
+
+
     it('should support searchResultFormat option', function (done) {
       var mockReq = {
         url: '/search?q=Br',

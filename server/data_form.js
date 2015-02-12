@@ -164,13 +164,20 @@ DataForm.prototype.getResource = function (name) {
   });
 };
 
-DataForm.prototype.internalSearch = function (req, resourcesToSearch, includeResourceInResults, limit, callback) {
+DataForm.prototype.internalSearch = function (req, resourcesToSearch, includeResourceInResults, callback) {
   var searches = [],
     resourceCount = resourcesToSearch.length,
     urlParts = url.parse(req.url, true),
     searchFor = urlParts.query.q,
     filter = urlParts.query.f,
     formatResult = urlParts.query.format;
+
+    var limit;
+    if (typeof urlParts.query !== 'undefined' && typeof urlParts.query.l !== 'undefined' && !isNaN(Number(urlParts.query.l))) {
+      limit = urlParts.query.l;
+    } else {
+      limit = 50;
+    }
 
   function translate(string, array, context) {
     if (array) {
@@ -240,11 +247,13 @@ DataForm.prototype.internalSearch = function (req, resourcesToSearch, includeRes
   var searchParts = searchFor.split(/[\s,\_\/\'\\\(\)'\-]+/);
   var normalizedTerms = searchParts.map(function(s) { return normalizeForSearch(s); });
 
-  var regularRegexp = '(' + searchParts.join('.*') + ')';
-  var normalizedRegexp = '(' + normalizedTerms.join('.*') + ')';
+  //var regularRegexp = '(' + searchParts.join('.*') + ')';
+  //var normalizedRegexp = '(' + normalizedTerms.join('.*') + ')';
 
-  searchCriteria = {$regex: '(' + [regularRegexp, normalizedRegexp].join('|') + ')', $options: 'i'};
+  var allTerms = _.uniq(normalizedTerms.concat(searchParts));
 
+  searchCriteria = {$regex: '(' + allTerms.join('|') + ')', $options: 'i'};
+  console.log('sC', searchCriteria);
   this.searchFunc(
     searches,
     function (item, cb) {
@@ -343,14 +352,7 @@ DataForm.prototype.search = function () {
       return next();
     }
 
-    var limit;
-    if (typeof req.query.l && !isNaN(Number(req.query.l))) {
-      limit = req.query.l;
-    } else {
-      limit = 50;
-    }
-
-    this.internalSearch(req, [req.resource], false, limit, function (resultsObject) {
+    this.internalSearch(req, [req.resource], false, function (resultsObject) {
       res.send(resultsObject);
     });
   }, this);
@@ -359,14 +361,7 @@ DataForm.prototype.search = function () {
 DataForm.prototype.searchAll = function () {
   return _.bind(function (req, res) {
 
-    var limit;
-    if (typeof req.query.l && !isNaN(Number(req.query.l))) {
-      limit = req.query.l;
-    } else {
-      limit = 50;
-    }
-
-    this.internalSearch(req, this.resources, true, limit, function (resultsObject) {
+    this.internalSearch(req, this.resources, true, function (resultsObject) {
       res.send(resultsObject);
     });
   }, this);
