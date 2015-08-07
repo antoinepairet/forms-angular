@@ -133,12 +133,15 @@ DataForm.prototype.registerRoutes = function () {
     this.app.get.apply(this.app, processArgs(this.options, [':resourceName/:id/list', this.entityList()]));
 };
 DataForm.prototype.newResource = function (model, options) {
-    options = options || {};
-    options.suppressDeprecatedMessage = true;
     var passModel = model;
+    var _options = {};
     if (typeof model !== 'function') {
         passModel = model.model;
+    _options = model.options || {};
     }
+  options = extend(_options, options);
+  options.suppressDeprecatedMessage = true;
+  
     this.addResource(passModel.modelName, passModel, options);
 };
 //    Add a resource, specifying the model and any options.
