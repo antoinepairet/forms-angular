@@ -14,9 +14,11 @@ formsAngular.provider('routingService', [ '$injector', '$locationProvider', func
     {route: '/analyse/:model/:reportSchemaName', state: 'analyse::model::report', templateUrl: 'partials/base-analysis.html'},
     {route: '/analyse/:model',                   state: 'analyse::model',         templateUrl: 'partials/base-analysis.html'},
     {route: '/:model/:id/edit',                  state: 'model::edit',            templateUrl: 'partials/base-edit.html'},
+    {route: '/:model/:id/edit/:tab',             state: 'model::edit::tab',       templateUrl: 'partials/base-edit.html'},
     {route: '/:model/new',                       state: 'model::new',             templateUrl: 'partials/base-edit.html'},
     {route: '/:model',                           state: 'model::list',            templateUrl: 'partials/base-list.html'},
     {route: '/:model/:form/:id/edit',            state: 'model::form::edit',      templateUrl: 'partials/base-edit.html'},       // non default form (different fields etc)
+    {route: '/:model/:form/:id/edit/:tab',       state: 'model::form::edit::tab', templateUrl: 'partials/base-edit.html'},       // non default form (different fields etc)
     {route: '/:model/:form/new',                 state: 'model::form::new',       templateUrl: 'partials/base-edit.html'},       // non default form (different fields etc)
     {route: '/:model/:form',                     state: 'model::form::list',      templateUrl: 'partials/base-list.html'}        // list page with links to non default form
   ];
@@ -25,18 +27,29 @@ formsAngular.provider('routingService', [ '$injector', '$locationProvider', func
   var lastRoute = null,
     lastObject = {};
 
-  function _setUpNgRoutes(routes) {
+  function _setUpNgRoutes(routes, prefix, additional) {
+    prefix = prefix || '';
     angular.forEach(routes, function (routeSpec) {
-      _routeProvider.when(config.prefix + routeSpec.route, routeSpec.options || {templateUrl: routeSpec.templateUrl});
+      _routeProvider.when(prefix + routeSpec.route, angular.extend(routeSpec.options || {templateUrl: routeSpec.templateUrl}, additional));
     });
+    // This next bit is just for the demo website to allow demonstrating multiple frameworks - not available with other routers
+    if (config.variantsForDemoWebsite) {
+      angular.forEach(config.variantsForDemoWebsite, function(variant) {
+        angular.forEach(routes, function (routeSpec) {
+          _routeProvider.when(prefix + variant + routeSpec.route, angular.extend(routeSpec.options || {templateUrl: routeSpec.templateUrl}, additional));
+        });
+      });
+    }
   }
 
-  function _setUpUIRoutes(routes) {
+  function _setUpUIRoutes(routes, prefix, additional) {
+    prefix = prefix || '';
     angular.forEach(routes, function (routeSpec) {
-      _stateProvider.state(routeSpec.state, routeSpec.options || {
-        url: routeSpec.route,
+      _stateProvider.state(routeSpec.state, angular.extend(routeSpec.options || {
+        url: prefix + routeSpec.route,
         templateUrl: routeSpec.templateUrl
-      });
+        }, additional)
+      );
     });
   }
 
@@ -78,6 +91,18 @@ formsAngular.provider('routingService', [ '$injector', '$locationProvider', func
   }
 
   return {
+    /*
+        options:
+           prefix:        A string (such as '/db') that gets prepended to all the generated routes.  This can be used to
+                          prevent generated routes (which have a lot of parameters) from clashing with other routes in
+                          the web app that have nothing to do with CRUD forms
+           add2fngRoutes: An object to add to the generated routes.  One user case would be to add {authenticate: true}
+                          so that the client authenticates for certain routes
+           html5Mode:     boolean
+           routing:       Must be 'ngroute' or 'uirouter'
+
+
+     */
     start: function (options) {
       angular.extend(config, options);
       if (config.prefix[0] && config.prefix[0] !== '/') { config.prefix = '/' + config.prefix; }
@@ -89,13 +114,13 @@ formsAngular.provider('routingService', [ '$injector', '$locationProvider', func
         case 'ngroute' :
           _routeProvider = $injector.get('$routeProvider');
           if (config.fixedRoutes) { _setUpNgRoutes(config.fixedRoutes); }
-          _setUpNgRoutes(builtInRoutes);
+          _setUpNgRoutes(builtInRoutes, config.prefix, options.add2fngRoutes);
           break;
         case 'uirouter' :
           _stateProvider = $injector.get('$stateProvider');
           if (config.fixedRoutes) { _setUpUIRoutes(config.fixedRoutes); }
           setTimeout(function () {
-            _setUpUIRoutes(builtInRoutes);
+            _setUpUIRoutes(builtInRoutes, config.prefix, options.add2fngRoutes);
           });
           break;
       }
@@ -118,19 +143,37 @@ formsAngular.provider('routingService', [ '$injector', '$locationProvider', func
               }
 
               var locationSplit = location.split('/');
+
+              // get rid of variant if present - just used for demo website
+              if (config.variants) {
+                if (config.variants.indexOf(locationSplit[1]) !== -1) {
+                  lastObject.variant = locationSplit[1];
+                  locationSplit.shift();
+                }
+              }
+
               var locationParts = locationSplit.length;
               if (locationSplit[1] === 'analyse') {
                 lastObject.analyse = true;
                 lastObject.modelName = locationSplit[2];
+                lastObject.reportSchemaName = locationParts >= 4 ? locationSplit[3] : null;
               } else {
                 lastObject.modelName = locationSplit[1];
-                var lastPart = locationSplit[locationParts - 1];
-                if (lastPart === 'new') {
+                var lastParts = [locationSplit[locationParts - 1], locationSplit[locationParts - 2]];
+                var newPos = lastParts.indexOf('new');
+                var editPos;
+                if (newPos === -1) {
+                  editPos = lastParts.indexOf('edit');
+                  if (editPos !== -1) {
+                    locationParts -= (2 + editPos);
+                    lastObject.id = locationSplit[locationParts];
+                  }
+                } else {
                   lastObject.newRecord = true;
-                  locationParts--;
-                } else if (lastPart === 'edit') {
-                  locationParts = locationParts - 2;
-                  lastObject.id = locationSplit[locationParts];
+                  locationParts -= (1 + newPos);
+                }
+                if (editPos === 1 || newPos === 1) {
+                  lastObject.tab = lastParts[0];
                 }
                 if (locationParts > 2) {
                   lastObject.formName = locationSplit[2];

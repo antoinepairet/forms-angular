@@ -5233,10 +5233,6 @@ a.badge:focus {
 .affix {
   position: fixed;
 }
-body {
-  position: relative;
-  padding-top: 40px;
-}
 .list-item {
   min-height: 20px;
   padding: 19px;
@@ -5350,18 +5346,20 @@ form .schema-foot blockquote {
   border-color: rgba(0, 0, 0, 0.15);
 }
 form .schema-head {
-  margin-top: 0;
+  margin-top: 8px;
   margin-bottom: 5px;
   border: 1px solid #ddd;
   padding: 4px 180px;
 }
 form .sub-doc {
-  padding: 0 5px 0 0;
+  padding: 5px 5px 2px 0;
   width: 97%;
   margin-bottom: 3px;
+  position: relative;
 }
 form .sub-doc-btns {
-  margin-left: 15px;
+  position: absolute;
+  right: 8px;
 }
 form .schema-foot {
   padding: 5px 180px;
@@ -5374,8 +5372,17 @@ form input[type="checkbox"].ng-invalid-required:after {
   /* padding-left is too small at 12 if inline help is not used*/
   padding-left: 12px;
 }
+form span:first-child input[type="radio"].ng-invalid-required:after {
+  content: "*";
+  font-weight: bold;
+  color: red;
+  /* padding-left is too small at 12 if inline help is not used*/
+  padding-left: 12px;
+}
 form input.ng-invalid-required,
-form select.fng-invalid-required {
+form select.fng-invalid-required,
+form select.ng-invalid-required,
+form textarea.ng-invalid-required {
   background-color: rgba(255, 0, 0, 0.1);
 }
 form option {
@@ -5414,6 +5421,12 @@ form .form-inline > .sub-doc {
 }
 .search-results .search-result.focus {
   color: white;
+}
+.dropdown-menu > .disabled > li,
+.dropdown-menu > .disabled > a,
+.dropdown-menu > .disabled > a:hover,
+.dropdown-menu > .disabled > a:focus {
+  cursor: not-allowed;
 }
 /*!
  * Bootstrap Responsive v2.3.2

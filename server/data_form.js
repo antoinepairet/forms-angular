@@ -21,7 +21,10 @@ function logTheAPICalls(req, res, next) {
 
 function processArgs(options, array) {
   if (options.authentication) {
-    array.splice(1, 0, options.authentication);
+    var authArray = _.isArray(options.authentication) ? options.authentication : [options.authentication];
+    for (var i = authArray.length - 1; i >= 0; i--) {
+      array.splice(1, 0, authArray[i]);
+    }
   }
   if (debug) {
     array.splice(1, 0, logTheAPICalls);
@@ -161,13 +164,20 @@ DataForm.prototype.getResource = function (name) {
   });
 };
 
-DataForm.prototype.internalSearch = function (req, resourcesToSearch, includeResourceInResults, limit, callback) {
+DataForm.prototype.internalSearch = function (req, resourcesToSearch, includeResourceInResults, callback) {
   var searches = [],
     resourceCount = resourcesToSearch.length,
     urlParts = url.parse(req.url, true),
     searchFor = urlParts.query.q,
     filter = urlParts.query.f,
     formatResult = urlParts.query.format;
+
+    var limit;
+    if (typeof urlParts.query !== 'undefined' && typeof urlParts.query.l !== 'undefined' && !isNaN(Number(urlParts.query.l))) {
+      limit = urlParts.query.l;
+    } else {
+      limit = 50;
+    }
 
   function translate(string, array, context) {
     if (array) {
@@ -271,10 +281,11 @@ DataForm.prototype.internalSearch = function (req, resourcesToSearch, includeRes
 
             // Do we already have them in the list?
             var thisId = docs[k]._id,
+              thisIdStr = String(thisId),
               resultObject,
               resultPos;
             for (resultPos = results.length - 1; resultPos >= 0; resultPos--) {
-              if (results[resultPos].id.id === thisId.id) {
+              if (String(results[resultPos].id) === thisIdStr) {
                 break;
               }
             }
@@ -339,14 +350,7 @@ DataForm.prototype.search = function () {
       return next();
     }
 
-    var limit;
-    if (typeof req.query.l && !isNaN(Number(req.query.l))) {
-      limit = req.query.l;
-    } else {
-      limit = 50;
-    }
-
-    this.internalSearch(req, [req.resource], false, limit, function (resultsObject) {
+    this.internalSearch(req, [req.resource], false, function (resultsObject) {
       res.send(resultsObject);
     });
   }, this);
@@ -355,14 +359,7 @@ DataForm.prototype.search = function () {
 DataForm.prototype.searchAll = function () {
   return _.bind(function (req, res) {
 
-    var limit;
-    if (typeof req.query.l && !isNaN(Number(req.query.l))) {
-      limit = req.query.l;
-    } else {
-      limit = 50;
-    }
-
-    this.internalSearch(req, this.resources, true, limit, function (resultsObject) {
+    this.internalSearch(req, this.resources, true, function (resultsObject) {
       res.send(resultsObject);
     });
   }, this);
@@ -478,7 +475,7 @@ DataForm.prototype.preprocess = function (paths, formSchema) {
 DataForm.prototype.schema = function () {
   return _.bind(function (req, res) {
     if (!(req.resource = this.getResource(req.params.resourceName))) {
-      return res.send(404);
+      return res.status(404).end();
     }
     var formSchema = null;
     if (req.params.formName) {

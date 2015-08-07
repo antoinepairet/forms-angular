@@ -68,7 +68,7 @@ describe('Report API', function () {
       send: function (data) {
         assert.equal(data.report.length, 2);
         assert.deepEqual(data.report[0], {_id: 'F', count: 11});
-        assert.deepEqual(data.report[1], {_id: 'M', count: 6});
+        assert.deepEqual(data.report[1], {_id: 'M', count: 7});
         done();
       }
     };
@@ -104,7 +104,7 @@ describe('Report API', function () {
       send: function (data) {
         assert.equal(data.report.length, 2);
         assert.deepEqual(data.report[0], {_id: 'Female', count: 11});
-        assert.deepEqual(data.report[1], {_id: 'Male', count: 6});
+        assert.deepEqual(data.report[1], {_id: 'Male', count: 7});
         done();
       }
     };
@@ -146,7 +146,7 @@ describe('Report API', function () {
       send: function (data) {
         assert.equal(data.report.length, 2);
         assert.deepEqual(data.report[0], {_id: 'Female', count: 11, functionResult: 21});
-        assert.deepEqual(data.report[1], {_id: 'Male', count: 6, functionResult: 16});
+        assert.deepEqual(data.report[1], {_id: 'Male', count: 7, functionResult: 17});
         done();
       }
     };
@@ -200,7 +200,7 @@ describe('Report API', function () {
     var mockRes = {
       send: function (data) {
         assert.equal(data.report.length, 1);
-        assert.deepEqual(data.report[0], {_id: 'Male', count: 6});
+        assert.deepEqual(data.report[0], {_id: 'Male', count: 7});
         done();
       }
     };
