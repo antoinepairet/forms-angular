@@ -141,7 +141,7 @@ DataForm.prototype.newResource = function (model, options) {
     }
   options = extend(_options, options);
   options.suppressDeprecatedMessage = true;
-  
+
     this.addResource(passModel.modelName, passModel, options);
 };
 //    Add a resource, specifying the model and any options.
