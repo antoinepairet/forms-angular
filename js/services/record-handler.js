@@ -96,7 +96,9 @@ formsAngular.factory('recordHandler', function (
                     if (typeof $scope.dataEventFunctions.onAfterCreate === 'function') {
                         $scope.dataEventFunctions.onAfterCreate(data);
                     }
-                    if (options.redirect) {
+                    if (options.successFn) {
+                        options.successFn(data);
+                    } else if (options.redirect) {
                         $window.location = options.redirect;
                     } else {
                         $location.path(routingService.pathView('edit', $scope, data._id));
