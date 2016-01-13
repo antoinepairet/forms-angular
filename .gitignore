@@ -33,3 +33,9 @@ logs
 results
 
 npm-debug.log
+typings/tsd.d.ts
+typings/angularjs/angular.d.ts
+typings/jquery/jquery.d.ts
+typings/mongoose/mongoose.d.ts
+typings/node/node.d.ts
+typings/underscore/underscore.d.ts

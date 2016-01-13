@@ -1,4 +1,4 @@
-/*! forms-angular 2015-12-01 */
+/*! forms-angular 2016-01-13 */
 'use strict';
 
 var formsAngular = angular.module('formsAngular', [
@@ -1826,7 +1826,7 @@ formsAngular.factory('formGenerator', function (
                     formInstructions.add = 'ui-date ui-date-format datepicker-popup-fix ';
                 }
             }
-        } else if (mongooseType.instance === 'boolean') {
+        } else if (mongooseType.instance === 'boolean' || mongooseType.instance === 'Boolean') {
             formInstructions.type = 'checkbox';
         } else if (mongooseType.instance === 'Number') {
             formInstructions.type = 'number';
