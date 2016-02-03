@@ -70,7 +70,7 @@ formsAngular.config(['routingServiceProvider', function (routingService) {
      to
 ```      
      "angular-ui-bootstrap-bower": "0.11.0",
-     "bootstrap": "3.1.1",
+     "bootstrap": "3.3.6",
      "select2-bootstrap-css": "~1.3",
 ```     
 
