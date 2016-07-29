@@ -1,4 +1,4 @@
-/*! forms-angular 2016-02-03 */
+/*! forms-angular 2016-07-29 */
 'use strict';
 
 var formsAngular = angular.module('formsAngular', [
@@ -539,7 +539,7 @@ formsAngular
                 template +=  '</div>' +
                   '<div ng-form class="' + (cssFrameworkService.framework() === 'bs2' ? 'row-fluid ' : '') +
                   convertFormStyleToClass(info.formStyle) + '" name="form_' + niceName + '{{$index}}" class="sub-doc well" id="' + info.id + 'List_{{$index}}" ' +
-                  ' ng-repeat="subDoc in ' + (options.model || 'record') + '.' + info.name + ' track by $index">' +
+                  ' ng-repeat="subDoc in ' + (options.model || 'record') + '.' + info.name + '">' +
                   '   <div class="' + (cssFrameworkService.framework() === 'bs2' ? 'row-fluid' : 'row') + ' sub-doc">';
                 if (!info.noRemove || info.customSubDoc) {
                   template += '   <div class="sub-doc-btns">';
