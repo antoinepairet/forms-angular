@@ -70,7 +70,7 @@ formsAngular.factory('recordHandler', function (
       //  Replace {field: undetermined} by {field: ''} in order for back-end fng to be
       //  able to synchronize mongodb object correctly
       for(var key in dataToSave){
-        if (!dataToSave.hasOwnProperty(key)) continue;
+        if (!dataToSave.hasOwnProperty(key)) { continue; }
         if(typeof dataToSave[key] === 'undefined'){
           dataToSave[key] = '';
         }
