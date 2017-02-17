@@ -67,6 +67,15 @@ formsAngular.factory('recordHandler', function (
     exports.updateDocument = function (dataToSave, options, $scope, handleError, ctrlState) {
         $scope.phase = 'updating';
 
+      //  Replace {field: undetermined} by {field: ''} in order for back-end fng to be
+      //  able to synchronize mongodb object correctly
+      for(var key in dataToSave){
+        if (!dataToSave.hasOwnProperty(key)) continue;
+        if(typeof dataToSave[key] === 'undefined'){
+          dataToSave[key] = '';
+        }
+      }
+
         SubmissionsService.updateRecord($scope.modelName, $scope.id, dataToSave)
             .success(function (data) {
                 if (data.success !== false) {
