@@ -125,7 +125,7 @@ formsAngular.factory('recordHandler', function (
     exports.getListData = function (record, fieldName, select2List) {
         var nests = fieldName.split('.');
         for (var i = 0; i < nests.length; i++) {
-            if (record !== undefined) {
+            if (record !== undefined && record && nests && nests[i]) {
                 record = record[nests[i]];
             }
         }

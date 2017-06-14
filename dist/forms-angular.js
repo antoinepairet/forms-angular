@@ -1,4 +1,4 @@
-/*! forms-angular 2017-02-17 */
+/*! forms-angular 2017-06-14 */
 'use strict';
 
 var formsAngular = angular.module('formsAngular', [
@@ -2627,7 +2627,7 @@ formsAngular.factory('recordHandler', function (
     exports.getListData = function (record, fieldName, select2List) {
         var nests = fieldName.split('.');
         for (var i = 0; i < nests.length; i++) {
-            if (record !== undefined) {
+            if (record !== undefined && record && nests && nests[i]) {
                 record = record[nests[i]];
             }
         }
