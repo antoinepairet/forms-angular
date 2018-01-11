@@ -1,6 +1,6 @@
 'use strict';
 
-formsAngular.factory('SubmissionsService', ['$http', function ($http) {
+formsAngular.factory('SubmissionsService', ['$http', '$q', function ($http, $q) {
   /*
    generate a query string for a filtered and paginated query for submissions.
    options consists of the following:
@@ -52,6 +52,21 @@ formsAngular.factory('SubmissionsService', ['$http', function ($http) {
     },
     getPagedAndFilteredList: function (modelName, options) {
       return $http.get('/api/' + modelName + generateListQuery(options));
+    },
+    getPagedAndFilteredListCancelable: function (modelName, options) {
+
+      var canceller = $q.defer();
+
+      var cancel = function(reason){
+        canceller.resolve(reason);
+      };
+
+      var promise = $http.get('/api/' + modelName + generateListQuery(options), { timeout: canceller.promise});
+
+      return {
+        promise: promise,
+        cancel: cancel
+      };
     },
     searchModelPagedAndFilteredList: function (modelName, needle, options) {
       options = _.extend(options, {query: needle});
